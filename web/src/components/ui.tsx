@@ -74,9 +74,10 @@ export function Toggle({ checked, onChange, label, disabled }: { checked: boolea
 // ---------------------------------------------------------------- Surfaces
 export function Panel({ className, children, title, actions, subtitle, pad = true }: { className?: string; children?: ReactNode; title?: ReactNode; subtitle?: ReactNode; actions?: ReactNode; pad?: boolean }) {
   return (
-    <section className={cx("panel min-w-0", className)}>
+    // Flex column so the body fills a fixed-height panel (graphs and canvases size themselves to it).
+    <section className={cx("panel flex min-w-0 flex-col", className)}>
       {(title || actions) && (
-        <header className="flex items-center justify-between gap-3 border-b border-line-2 px-5 py-3.5">
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-line-2 px-5 py-3.5">
           <div className="min-w-0">
             {title && <h3 className="truncate text-[14px] font-semibold tracking-[-0.01em] text-ink">{title}</h3>}
             {subtitle && <p className="mt-0.5 truncate text-[12px] text-muted">{subtitle}</p>}
@@ -84,7 +85,7 @@ export function Panel({ className, children, title, actions, subtitle, pad = tru
           {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
         </header>
       )}
-      <div className={cx(pad && "p-5")}>{children}</div>
+      <div className={cx("relative min-h-0 flex-1", pad && "p-5")}>{children}</div>
     </section>
   );
 }

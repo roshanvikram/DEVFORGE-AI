@@ -44,7 +44,9 @@ function macProfile(work: string, allowNetwork: boolean) {
 ${allowNetwork ? "" : "(deny network*)\n(allow network* (local unix-socket))"}
 (deny file-write*)
 (allow file-write* (subpath ${sbString(work)}) (literal "/dev/null") (literal "/dev/tty") (literal "/dev/dtracehelper") (regex #"^/dev/fd/") (regex #"^/private/var/folders/.*/T/"))
-(deny file-read* ${[...deniedReads, realData, path.join(PROJECT_ROOT, ".env"), path.join(PROJECT_ROOT, "server", ".env")].map((p) => `(subpath ${sbString(p)})`).join(" ")})
+; Deny reading the *contents* of credentials and DevForge's own data (DB, secrets, other repos).
+; Metadata (lstat) stays allowed so runtimes can resolve paths through parent directories.
+(deny file-read-data ${[...deniedReads, realData, path.join(PROJECT_ROOT, ".env"), path.join(PROJECT_ROOT, "server", ".env")].map((p) => `(subpath ${sbString(p)})`).join(" ")})
 (allow file-read* (subpath ${sbString(work)}))
 `;
 }

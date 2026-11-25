@@ -12,6 +12,8 @@ import { workspacesRouter } from "./routes/workspaces.js";
 import { reposRouter } from "./routes/repositories.js";
 import { findingsRouter } from "./routes/findings.js";
 import { jobsRouter } from "./routes/jobs.js";
+import { platformRouter } from "./routes/platform.js";
+import "./workflows/engine.js";
 import { rateLimit } from "./lib/ratelimit.js";
 
 // Register background job handlers.
@@ -48,6 +50,7 @@ export function createApp() {
   app.use("/api/repositories", reposRouter);
   app.use("/api/findings", findingsRouter);
   app.use("/api", jobsRouter);
+  app.use("/api", platformRouter);
   app.use("/api", (_req, _res, next) => next(new HttpError(404, "API route not found", "not_found")));
 
   // Serve the built frontend in production.

@@ -27,6 +27,13 @@ export function registerHandler(type: string, h: Handler) {
   handlers.set(type, h);
 }
 
+/** Run a registered handler inline inside another job (used by workflows to avoid worker-slot deadlocks). */
+export async function runInline(type: string, parent: JobCtx, payload: unknown): Promise<unknown> {
+  const h = handlers.get(type);
+  if (!h) throw new Error(`No handler registered for ${type}`);
+  return h({ ...parent, payload, progress: () => {} });
+}
+
 export function enqueue(type: string, workspaceId: string, payload: unknown, opts: { userId?: string | null; maxAttempts?: number } = {}): string {
   const id = newId("job_");
   db().prepare(`INSERT INTO jobs (id, workspace_id, type, payload, max_attempts, created_by) VALUES (?,?,?,?,?,?)`).run(id, workspaceId, type, JSON.stringify(payload ?? {}), opts.maxAttempts ?? 1, opts.userId ?? null);

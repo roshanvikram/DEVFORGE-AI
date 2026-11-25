@@ -6,6 +6,7 @@ import { Bug, ShieldCheck, FlaskConical, GitPullRequest, FileSearch, ScanSearch,
 import { get, post } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { useRepo } from "../../lib/repo";
+import { HealthPanel } from "../../components/health";
 import { PageHeader, Panel, Stat, HealthRing, Button, EmptyState, ErrorState, LoadingBlock, SeverityBadge, StatusBadge, Badge, Notice } from "../../components/ui";
 import { JobPanel, useActiveJobs } from "../../components/jobs";
 import { SEV_COLOR, SEVERITIES, timeAgo, num, titleCase } from "../../lib/format";
@@ -62,16 +63,8 @@ export default function CommandCenter() {
       {jobs.length > 0 && <div className="mb-6 space-y-2">{jobs.slice(0, 2).map((j: any) => <JobPanel key={j.id} jobId={j.id} compact />)}</div>}
       {caps.data && !caps.data.ai.configured && <div className="mb-6"><Notice tone="info" icon={<Sparkles className="size-4 text-info" />}>Static analysis is fully active. AI hypotheses, AI review, test generation and Q&A need a Claude API key — <Link className="font-medium text-amber-deep underline" to="/app/integrations">connect one</Link>.</Notice></div>}
 
-      <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
-        <Panel className="flex flex-col items-center justify-center">
-          <HealthRing score={r?.health?.score ?? null} size={150} />
-          <div className="mt-5 grid w-full grid-cols-2 gap-2 text-[12px]">
-            {Object.entries(r?.health?.breakdown ?? {}).map(([k, v]: any) => (
-              <div key={k} className="rounded-lg bg-ivory/70 px-2.5 py-2 ring-1 ring-line"><div className="capitalize text-muted">{k}</div><div className="text-[15px] font-semibold tabular-nums text-ink">{v}</div></div>
-            ))}
-          </div>
-          <p className="mt-3 text-center text-[11px] leading-relaxed text-faint">Severity-weighted open findings per KLOC. Detected findings only.</p>
-        </Panel>
+      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+        {repo ? <HealthPanel repoId={repo.id} /> : <Panel><HealthRing score={null} size={150} /></Panel>}
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Stat label="Open bugs" value={num(bugs)} icon={<Bug className="size-4" />} tone={bugs ? "amber" : undefined} sub={<Link to="/app/bugs" className="hover:text-ink">Bug Intelligence →</Link>} />
           <Stat label="Security risks" value={num(security)} icon={<ShieldCheck className="size-4" />} tone={security ? "danger" : "success"} sub={<Link to="/app/security" className="hover:text-ink">Security Center →</Link>} />

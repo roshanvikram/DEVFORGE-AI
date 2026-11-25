@@ -17,6 +17,7 @@ import { persistFindings } from "./findings.js";
 import { audit, notify } from "../lib/audit.js";
 import { publish } from "../lib/events.js";
 import { getGithubToken } from "./integrations.js";
+import { afterAnalysis } from "./realtime.js";
 
 export const SCAN_KINDS = ["bug", "security", "dependency", "performance", "debt"] as const;
 export type ScanKind = (typeof SCAN_KINDS)[number];
@@ -231,11 +232,12 @@ async function importAndAnalyze(ctx: JobCtx) {
     ctx.progress(0.58, "Index complete");
     const result = await analyzeSnapshot({ ...repo, current_snapshot_id: ictx.snapshotId }, ictx, kinds, ctx);
     setStatus("ready");
+    const post = afterAnalysis(repo.id, (ctx.payload as any).trigger ?? "analysis");
     ctx.progress(1, "Analysis complete");
     audit({ workspaceId: repo.workspace_id, actorId: ctx.userId, actorType: "system", action: "repository.analyzed", entityType: "repository", entityId: repo.id, data: { kinds, snapshotId: ictx.snapshotId } });
     const newFindings = result.scans.reduce((a: number, s: any) => a + (s.created ?? 0), 0);
     notify({ workspaceId: repo.workspace_id, kind: "analysis", title: `Analysis finished: ${repo.name}`, body: `${result.scans.length} scans, ${newFindings} new findings`, link: `/app/repository?repo=${repo.id}` });
-    return { snapshotId: ictx.snapshotId, files: ictx.files.length, ...result };
+    return { snapshotId: ictx.snapshotId, files: ictx.files.length, ...result, health: post.health, gate: post.gate ? { passed: post.gate.passed } : null };
   } catch (e: any) {
     setStatus(repo.current_snapshot_id ? "ready" : "failed", ctx.signal.aborted ? "Cancelled" : String(e.message).slice(0, 500));
     throw e;
@@ -250,10 +252,11 @@ async function analyzeExisting(ctx: JobCtx) {
   const ictx = loadContext(repo.current_snapshot_id, repoDir(repo.id));
   const res = await analyzeSnapshot(repo, ictx, kinds, { ...ctx, progress: (p, m) => ctx.progress(Math.max(0.05, (p - 0.6) / 0.4), m) });
   db().prepare(`UPDATE repositories SET last_analyzed_at = ? WHERE id = ?`).run(now(), repo.id);
+  const post = afterAnalysis(repo.id, "scan");
   audit({ workspaceId: repo.workspace_id, actorId: ctx.userId, action: "repository.scanned", entityType: "repository", entityId: repo.id, data: { kinds } });
   const created = res.scans.reduce((a: number, s: any) => a + (s.created ?? 0), 0);
   notify({ workspaceId: repo.workspace_id, kind: "scan", title: `${kinds.join(", ")} scan finished: ${repo.name}`, body: `${created} new findings`, link: `/app/bugs?repo=${repo.id}` });
-  return res;
+  return { ...res, health: post.health, gate: post.gate ? { passed: post.gate.passed } : null };
 }
 
 registerHandler("repo.import", importAndAnalyze);

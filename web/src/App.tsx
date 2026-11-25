@@ -6,7 +6,7 @@ import { RepoProvider } from "./lib/repo";
 import { AppShell } from "./components/AppShell";
 import { SiteLayout, Landing, FeaturesPage, AgentsPage, HowItWorksPage, SecurityPage, DocsPage, PricingPage } from "./pages/public/Site";
 import { LoginPage, SignupPage, ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage, AcceptInvitePage } from "./pages/public/Auth";
-import { Button, LoadingBlock } from "./components/ui";
+import { Button, LoadingBlock, ErrorState } from "./components/ui";
 
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const CommandCenter = lazy(() => import("./pages/app/CommandCenter"));
@@ -43,6 +43,9 @@ const Ad = () => import("./pages/app/Admin");
 const Team = lazy(() => Ad().then((m) => ({ default: m.TeamPage })));
 const Integrations = lazy(() => Ad().then((m) => ({ default: m.IntegrationsPage })));
 const Settings = lazy(() => Ad().then((m) => ({ default: m.SettingsPage })));
+const Live = lazy(() => import("./pages/app/Live"));
+const Gates = lazy(() => import("./pages/app/Gates"));
+const Sync = lazy(() => import("./pages/app/Sync"));
 const Help = lazy(() => Ad().then((m) => ({ default: m.HelpPage })));
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -63,9 +66,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 }
 
 function RequireAuth({ children }: { children: ReactNode }) {
-  const { me } = useAuth();
+  const { me, authError, retryAuth } = useAuth();
   const loc = useLocation();
-  if (me === undefined) return <div className="p-10"><LoadingBlock /></div>;
+  if (me === undefined) return <div className="p-10">{authError ? <ErrorState error={authError} retry={retryAuth} /> : <LoadingBlock />}</div>;
   if (!me) return <Navigate to={`/login?next=${encodeURIComponent(loc.pathname + loc.search)}`} replace />;
   return <>{children}</>;
 }
@@ -132,6 +135,9 @@ export default function App() {
         <Route path="integrations" element={page(<Integrations />)} />
         <Route path="settings" element={page(<Settings />)} />
         <Route path="help" element={page(<Help />)} />
+        <Route path="live" element={page(<Live />)} />
+        <Route path="gates" element={page(<Gates />)} />
+        <Route path="sync" element={page(<Sync />)} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

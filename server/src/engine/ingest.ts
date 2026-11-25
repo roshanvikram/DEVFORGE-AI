@@ -171,3 +171,14 @@ export async function gitPull(dir: string, token: string | null, log: (m: string
   if (r.code !== 0) log(`git pull failed (continuing with current checkout): ${r.stderr.split("\n")[0]?.slice(0, 200)}`);
   return gitHead(dir);
 }
+
+/** Resolves the remote head commit without fetching objects (`git ls-remote`). Used by auto-sync. */
+export async function gitRemoteHead(url: URL, branch: string | null, token: string | null): Promise<string | null> {
+  const args = [...GIT_SAFE];
+  if (token) args.push("-c", `http.extraHeader=Authorization: Basic ${Buffer.from(`x-access-token:${token}`).toString("base64")}`);
+  args.push("ls-remote", "--", url.toString(), branch ? `refs/heads/${branch}` : "HEAD");
+  const r = await run("git", args, { cwd: config.reposDir, timeoutMs: 30_000 });
+  if (r.code !== 0) throw new Error(`git ls-remote failed: ${r.stderr.replace(/Authorization: Basic \S+/g, "[auth]").split("\n").filter(Boolean).slice(-1).join(" ").slice(0, 200)}`);
+  const sha = r.stdout.trim().split(/\s+/)[0];
+  return /^[0-9a-f]{40}$/.test(sha ?? "") ? sha : null;
+}

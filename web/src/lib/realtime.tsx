@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import { useAuth } from "./auth";
 
 type Listener = (e: any) => void;
-const Ctx = createContext<{ subscribe: (fn: Listener) => () => void; connected: boolean }>({ subscribe: () => () => {}, connected: false });
+export type PresenceUser = { userId: string; name: string; avatar: string | null; path: string; since: string; lastActive: string; tabs: number };
+const Ctx = createContext<{ subscribe: (fn: Listener) => () => void; connected: boolean; presence: PresenceUser[]; send: (m: unknown) => void }>({ subscribe: () => () => {}, connected: false, presence: [], send: () => {} });
 
 /** WebSocket connection to the workspace event stream; invalidates queries on server events. */
 export function RealtimeProvider({ children }: { children: ReactNode }) {
@@ -12,6 +13,9 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const listeners = useRef(new Set<Listener>());
   const [connected, setConnected] = useState(false);
+  const [presence, setPresence] = useState<PresenceUser[]>([]);
+  const sock = useRef<WebSocket | null>(null);
+  const lastPath = useRef<string | null>(null);
   useEffect(() => {
     if (!workspace) return;
     let ws: WebSocket | null = null;
@@ -22,7 +26,12 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     const connect = () => {
       const proto = location.protocol === "https:" ? "wss" : "ws";
       ws = new WebSocket(`${proto}://${location.host}/api/events?workspace=${workspace.id}`);
-      ws.onopen = () => { setConnected(true); retry = 1000; };
+      sock.current = ws;
+      ws.onopen = () => {
+        setConnected(true);
+        retry = 1000;
+        if (lastPath.current) ws?.send(JSON.stringify({ type: "presence", path: lastPath.current }));
+      };
       ws.onclose = () => {
         setConnected(false);
         if (!closed) timer = setTimeout(connect, (retry = Math.min(retry * 2, 15000)));
@@ -42,13 +51,21 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
           case "workflow_execution": invalidate(["workflow-execution", "workflows", "approvals"]); break;
           case "notification": invalidate(["notifications"]); toast(e.title); break;
           case "activity": invalidate(["activity"]); break;
+          case "presence": setPresence(e.users ?? []); break;
+          case "health": invalidate(["health", "dashboard", "repos"]); break;
+          case "gate": invalidate(["quality-gate"]); break;
+          case "watch": case "webhook": invalidate(["watch", "live"]); break;
         }
       };
     };
     connect();
     return () => { closed = true; clearTimeout(timer); ws?.close(); };
   }, [workspace?.id]);
-  return <Ctx.Provider value={{ connected, subscribe: (fn) => { listeners.current.add(fn); return () => listeners.current.delete(fn); } }}>{children}</Ctx.Provider>;
+  const send = (m: any) => {
+    if (m?.type === "presence") lastPath.current = m.path;
+    if (sock.current?.readyState === WebSocket.OPEN) sock.current.send(JSON.stringify(m));
+  };
+  return <Ctx.Provider value={{ connected, presence, send, subscribe: (fn) => { listeners.current.add(fn); return () => listeners.current.delete(fn); } }}>{children}</Ctx.Provider>;
 }
 
 export const useRealtime = () => useContext(Ctx);

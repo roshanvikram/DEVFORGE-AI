@@ -17,6 +17,22 @@ export function openDb(file = config.dbPath): DB {
   d.pragma("foreign_keys = ON");
   d.pragma("busy_timeout = 5000");
   d.pragma("synchronous = NORMAL");
+  d.pragma("cache_size = -32000"); // 32 MB page cache
+  d.pragma("temp_store = MEMORY");
+  d.pragma("mmap_size = 268435456"); // 256 MB memory-mapped reads
+  // Statement cache: the app re-prepares the same SQL on every request; compiling once is
+  // markedly cheaper for hot paths (session lookup, membership checks, dashboards).
+  const prepare = d.prepare.bind(d);
+  const cache = new Map<string, Database.Statement>();
+  (d as any).prepare = (sql: string) => {
+    let s = cache.get(sql);
+    if (!s) {
+      s = prepare(sql);
+      if (cache.size > 2000) cache.clear();
+      cache.set(sql, s);
+    }
+    return s;
+  };
   return d;
 }
 

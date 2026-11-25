@@ -23,6 +23,10 @@ const running = new Map<string, AbortController>();
 let timer: NodeJS.Timeout | null = null;
 const CONCURRENCY = Number(process.env.JOB_CONCURRENCY ?? 2);
 
+export function workerState() {
+  return { concurrency: CONCURRENCY, running: running.size, handlers: [...handlers.keys()].sort() };
+}
+
 export function registerHandler(type: string, h: Handler) {
   handlers.set(type, h);
 }
@@ -81,9 +85,10 @@ async function execute(job: any) {
       publish(job.workspace_id, { type: "job.log", id: job.id, level, message: redact(m).slice(0, 500) });
     },
     progress: (p, m) => {
-      d.prepare(`UPDATE jobs SET progress = ?, message = COALESCE(?, message) WHERE id = ?`).run(Math.max(0, Math.min(1, p)), m ?? null, job.id);
+      // Throttle: indexers report progress per file; persist + broadcast at most ~4×/s.
       if (Date.now() - lastProgressEmit > 250 || p >= 1) {
         lastProgressEmit = Date.now();
+        d.prepare(`UPDATE jobs SET progress = ?, message = COALESCE(?, message) WHERE id = ?`).run(Math.max(0, Math.min(1, p)), m ?? null, job.id);
         publish(job.workspace_id, { type: "job", id: job.id, status: "running", progress: p, message: m, jobType: job.type });
       }
     },

@@ -14,6 +14,8 @@ interface AuthCtx {
   me: Me | null | undefined; // undefined = loading
   workspace: Workspace | null;
   can: (perm: string) => boolean;
+  authError: unknown;
+  retryAuth: () => void;
   refresh: () => Promise<void>;
   switchWorkspace: (id: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -33,9 +35,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     staleTime: 60_000,
-    retry: false,
+    // A restarting or unreachable server is not a logout: retry network failures quietly.
+    retry: (n, e: any) => e?.status === 0 && n < 8,
+    retryDelay: (n) => Math.min(1000 * 2 ** n, 8000),
   });
-  const me = q.isLoading ? undefined : (q.data ?? null);
+  // undefined = still resolving (or server unreachable); null = definitively signed out (401).
+  const me = q.data !== undefined ? q.data : undefined;
   const [wsId, setWs] = useState<string | null>(getWorkspaceId());
   useEffect(() => {
     if (!me) return;
@@ -47,6 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const workspace = me?.workspaces.find((w) => w.id === wsId) ?? null;
   const value: AuthCtx = {
     me,
+    authError: q.data === undefined && q.isError ? q.error : null,
+    retryAuth: () => q.refetch(),
     workspace,
     can: (p) => !!workspace?.permissions.includes(p),
     refresh: async () => { await qc.invalidateQueries({ queryKey: ["me"] }); },

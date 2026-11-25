@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { forwardRef, useEffect, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
@@ -71,7 +71,7 @@ export function Toggle({ checked, onChange, label, disabled }: { checked: boolea
 // ---------------------------------------------------------------- Surfaces
 export function Panel({ className, children, title, actions, subtitle, pad = true }: { className?: string; children?: ReactNode; title?: ReactNode; subtitle?: ReactNode; actions?: ReactNode; pad?: boolean }) {
   return (
-    <section className={cx("panel", className)}>
+    <section className={cx("panel min-w-0", className)}>
       {(title || actions) && (
         <header className="flex items-center justify-between gap-3 border-b border-line-2 px-5 py-3.5">
           <div className="min-w-0">
@@ -285,21 +285,67 @@ export function ProgressBar({ value, className }: { value: number; className?: s
     </div>
   );
 }
-export function HealthRing({ score, size = 120, label = "Health" }: { score: number | null; size?: number; label?: string }) {
-  const r = size / 2 - 9;
+export function gradeFor(score: number | null) {
+  if (score == null) return { grade: "—", label: "Not analysed", color: "#C9C6BD", tone: "neutral" as const };
+  if (score >= 90) return { grade: "A", label: "Excellent", color: "#23966A", tone: "success" as const };
+  if (score >= 80) return { grade: "B", label: "Good", color: "#5FA36B", tone: "success" as const };
+  if (score >= 65) return { grade: "C", label: "Fair", color: "#D99A28", tone: "amber" as const };
+  if (score >= 45) return { grade: "D", label: "At risk", color: "#E07A3A", tone: "danger" as const };
+  return { grade: "F", label: "Critical", color: "#D94C4C", tone: "danger" as const };
+}
+/** Animated integer count-up (respects reduced motion). */
+export function useCountUp(target: number | null, ms = 900) {
+  const [v, setV] = useState<number | null>(target);
+  const prev = useRef<number>(0);
+  useEffect(() => {
+    if (target == null) return setV(null);
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return setV(target);
+    const from = prev.current;
+    const t0 = performance.now();
+    let raf = 0;
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / ms);
+      const e = 1 - Math.pow(1 - k, 3);
+      setV(Math.round(from + (target - from) * e));
+      if (k < 1) raf = requestAnimationFrame(step);
+      else prev.current = target;
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target]);
+  return v;
+}
+export function HealthRing({ score, size = 120, label = "Health", showGrade = false }: { score: number | null; size?: number; label?: string; showGrade?: boolean }) {
+  const stroke = Math.max(8, Math.round(size / 15));
+  const r = size / 2 - stroke - 4;
   const c = 2 * Math.PI * r;
   const v = score == null ? 0 : score / 100;
-  const color = score == null ? "#C9C6BD" : score >= 85 ? "#23966A" : score >= 65 ? "#D99A28" : "#D94C4C";
+  const g = gradeFor(score);
+  const shown = useCountUp(score);
+  const id = useRef(`hr-${Math.random().toString(36).slice(2, 8)}`).current;
+  const ticks = Array.from({ length: 40 }, (_, i) => i);
   return (
-    <div className="relative" style={{ width: size, height: size }}>
+    <div className="relative" style={{ width: size, height: size }} role="img" aria-label={`${label} score ${score ?? "not available"}${score != null ? `, grade ${g.grade}` : ""}`}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} stroke="#EFECE5" strokeWidth={8} fill="none" />
-        <motion.circle cx={size / 2} cy={size / 2} r={r} stroke={color} strokeWidth={8} strokeLinecap="round" fill="none" strokeDasharray={c} initial={{ strokeDashoffset: c }} animate={{ strokeDashoffset: c * (1 - v) }} transition={{ duration: 1, ease: "easeOut" }} />
+        <defs>
+          <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor={g.color} stopOpacity={0.75} />
+            <stop offset="1" stopColor={g.color} />
+          </linearGradient>
+        </defs>
+        {size >= 140 && ticks.map((i) => {
+          const a = (i / ticks.length) * Math.PI * 2;
+          const r1 = size / 2 - 2, r2 = size / 2 - (i % 5 === 0 ? 6 : 4);
+          return <line key={i} x1={size / 2 + Math.cos(a) * r1} y1={size / 2 + Math.sin(a) * r1} x2={size / 2 + Math.cos(a) * r2} y2={size / 2 + Math.sin(a) * r2} stroke={i / ticks.length <= v ? g.color : "#E2DED5"} strokeOpacity={i / ticks.length <= v ? 0.55 : 1} strokeWidth={1} />;
+        })}
+        <circle cx={size / 2} cy={size / 2} r={r} stroke="#EFECE5" strokeWidth={stroke} fill="none" />
+        <motion.circle cx={size / 2} cy={size / 2} r={r} stroke={`url(#${id})`} strokeWidth={stroke} strokeLinecap="round" fill="none" strokeDasharray={c} initial={{ strokeDashoffset: c }} animate={{ strokeDashoffset: c * (1 - v) }} transition={{ duration: 1, ease: "easeOut" }} style={{ filter: score != null ? `drop-shadow(0 0 6px ${g.color}55)` : undefined }} />
       </svg>
       <div className="absolute inset-0 grid place-items-center text-center">
         <div>
-          <div className="text-[28px] font-semibold tabular-nums tracking-[-0.03em] text-ink">{score ?? "—"}</div>
+          <div className="font-semibold tabular-nums tracking-[-0.03em] text-ink" style={{ fontSize: Math.round(size / 4.6) }}>{shown ?? "—"}</div>
           <div className="text-[10.5px] font-medium uppercase tracking-[0.12em] text-muted">{label}</div>
+          {showGrade && score != null && <div className="mx-auto mt-1 w-fit rounded-full px-2 py-0.5 text-[10.5px] font-semibold" style={{ background: `${g.color}18`, color: g.color }}>Grade {g.grade} · {g.label}</div>}
         </div>
       </div>
     </div>

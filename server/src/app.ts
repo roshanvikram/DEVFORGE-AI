@@ -13,6 +13,7 @@ import { reposRouter } from "./routes/repositories.js";
 import { findingsRouter } from "./routes/findings.js";
 import { jobsRouter } from "./routes/jobs.js";
 import { platformRouter } from "./routes/platform.js";
+import { realtimeRouter, hooksRouter } from "./routes/realtime.js";
 import "./workflows/engine.js";
 import { rateLimit } from "./lib/ratelimit.js";
 
@@ -34,9 +35,12 @@ export function createApp() {
     if (config.isProd) res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     next();
   });
-  app.use(express.json({ limit: "2mb" }));
+  // Keep the raw body so webhook signatures can be verified byte-for-byte.
+  app.use(express.json({ limit: "2mb", verify: (req, _res, buf) => { (req as any).rawBody = buf; } }));
   app.use(cookieParser());
   app.use(loadSession);
+  // Server-to-server webhooks authenticate by HMAC signature, not cookies, so they sit before the CSRF guard.
+  app.use("/api/hooks", rateLimit("hooks", 120, 60_000), hooksRouter);
   app.use("/api", csrfGuard);
   app.use("/api", rateLimit("api", 600, 60_000));
   app.use("/api", (_req, res, next) => {
@@ -51,6 +55,7 @@ export function createApp() {
   app.use("/api/findings", findingsRouter);
   app.use("/api", jobsRouter);
   app.use("/api", platformRouter);
+  app.use("/api", realtimeRouter);
   app.use("/api", (_req, _res, next) => next(new HttpError(404, "API route not found", "not_found")));
 
   // Serve the built frontend in production.

@@ -5,7 +5,7 @@ import { Command } from "cmdk";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, FolderGit2, Network, Layers, Bug, FileSearch, ShieldCheck, GitPullRequest, GitMerge, FlaskConical, History, Boxes, Gauge, Hammer,
-  Bot, Workflow, BarChart3, BookOpen, FileText, Activity, Users, Plug, Settings, HelpCircle, Search, Bell, ChevronsUpDown, PanelLeftClose, PanelLeft,
+  Bot, Workflow, BarChart3, BookOpen, FileText, Activity, Users, Plug, Settings, HelpCircle, Search, Bell, ChevronsUpDown, Radio, BadgeCheck, RefreshCw, PanelLeftClose, PanelLeft,
   LogOut, Menu, X, Check, Plus, Circle,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
@@ -21,7 +21,8 @@ export const NAV_SECTIONS: { title?: string; items: { to: string; label: string;
   { title: "Understand", items: [{ to: "/app/repository", label: "Repository Intelligence", icon: Network }, { to: "/app/architecture", label: "Architecture", icon: Layers }, { to: "/app/dependencies", label: "Dependency Intelligence", icon: Boxes }] },
   { title: "Detect", items: [{ to: "/app/bugs", label: "Bug Intelligence", icon: Bug }, { to: "/app/investigations", label: "Investigations", icon: FileSearch }, { to: "/app/security", label: "Security Center", icon: ShieldCheck }, { to: "/app/performance", label: "Performance Lab", icon: Gauge }, { to: "/app/debt", label: "Technical Debt", icon: Hammer }] },
   { title: "Change", items: [{ to: "/app/reviews", label: "Code Review", icon: GitPullRequest }, { to: "/app/pulls", label: "Pull Requests", icon: GitMerge }, { to: "/app/tests", label: "Test Forge", icon: FlaskConical }, { to: "/app/regressions", label: "Regression Analysis", icon: History }] },
-  { title: "Automate", items: [{ to: "/app/agents", label: "AI Agents", icon: Bot }, { to: "/app/workflows", label: "Workflow Studio", icon: Workflow }] },
+  { title: "Automate", items: [{ to: "/app/agents", label: "AI Agents", icon: Bot }, { to: "/app/workflows", label: "Workflow Studio", icon: Workflow }, { to: "/app/sync", label: "Auto-Sync & Webhooks", icon: RefreshCw }] },
+  { title: "Live", items: [{ to: "/app/live", label: "Live Ops", icon: Radio }, { to: "/app/gates", label: "Quality Gates", icon: BadgeCheck }] },
   { title: "Insight", items: [{ to: "/app/analytics", label: "Analytics", icon: BarChart3 }, { to: "/app/knowledge", label: "Knowledge Base", icon: BookOpen }, { to: "/app/reports", label: "Reports", icon: FileText }, { to: "/app/activity", label: "Activity", icon: Activity }] },
 ];
 const BOTTOM = [{ to: "/app/team", label: "Team", icon: Users }, { to: "/app/integrations", label: "Integrations", icon: Plug }, { to: "/app/settings", label: "Settings", icon: Settings }, { to: "/app/help", label: "Help", icon: HelpCircle }];
@@ -189,9 +190,31 @@ const Item = ({ children, onSelect }: { children: ReactNode; onSelect: () => voi
   <Command.Item onSelect={onSelect} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-ink-2 data-[selected=true]:bg-white data-[selected=true]:text-ink data-[selected=true]:shadow-[0_0_0_1px_var(--color-line)]">{children}</Command.Item>
 );
 
+const PAGE_LABEL = (p: string) => [...NAV_SECTIONS.flatMap((s) => s.items), ...BOTTOM].filter((n) => p === n.to || (n.to !== "/app" && p.startsWith(n.to))).sort((a, b) => b.to.length - a.to.length)[0]?.label ?? "Command Center";
+function PresenceStack() {
+  const { presence } = useRealtime();
+  const { me } = useAuth();
+  if (!presence.length) return null;
+  const shown = presence.slice(0, 4);
+  return (
+    <div className="hidden items-center sm:flex" aria-label={`${presence.length} online`}>
+      {shown.map((u) => (
+        <div key={u.userId} className="group relative -ml-1.5 first:ml-0">
+          <div className={cx("grid size-7 place-items-center rounded-full bg-gradient-to-br from-white to-ivory text-[11px] font-semibold text-ink-2 ring-2", u.userId === me?.user.id ? "ring-amber/70" : "ring-white")}>{u.avatar ? <img src={u.avatar} alt="" className="size-7 rounded-full" /> : u.name.slice(0, 1).toUpperCase()}</div>
+          <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-success ring-2 ring-pearl" />
+          <div className="pointer-events-none absolute right-0 top-9 z-50 hidden w-max max-w-[220px] rounded-lg bg-ink px-2.5 py-1.5 text-[11.5px] text-white shadow-lg group-hover:block">
+            {u.name}{u.userId === me?.user.id ? " (you)" : ""}<div className="text-white/60">Viewing {PAGE_LABEL(u.path)}{u.tabs > 1 ? ` · ${u.tabs} tabs` : ""}</div>
+          </div>
+        </div>
+      ))}
+      {presence.length > 4 && <span className="-ml-1.5 grid size-7 place-items-center rounded-full bg-ivory text-[10.5px] font-semibold ring-2 ring-white">+{presence.length - 4}</span>}
+    </div>
+  );
+}
+
 export function AppShell() {
   const { me } = useAuth();
-  const { connected } = useRealtime();
+  const { connected, send } = useRealtime();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem("df.sidebar") === "1");
   const [mobile, setMobile] = useState(false);
   const [palette, setPalette] = useState(false);
@@ -205,6 +228,8 @@ export function AppShell() {
     return () => window.removeEventListener("keydown", h);
   }, []);
   useEffect(() => setMobile(false), [loc.pathname]);
+  // Report the page being viewed so teammates see live presence.
+  useEffect(() => send({ type: "presence", path: loc.pathname }), [loc.pathname, connected]);
   const crumbs = (() => {
     const all = [...NAV_SECTIONS.flatMap((s) => s.items), ...BOTTOM];
     const match = all.filter((n) => loc.pathname === n.to || (n.to !== "/app" && loc.pathname.startsWith(n.to))).sort((a, b) => b.to.length - a.to.length)[0];
@@ -230,7 +255,8 @@ export function AppShell() {
             <RepoSwitcher />
             <button onClick={() => setPalette(true)} className="hidden h-8 w-56 items-center gap-2 rounded-[10px] bg-white px-3 text-[12.5px] text-faint ring-1 ring-line hover:ring-silver md:flex"><Search className="size-3.5" />Search…<span className="kbd ml-auto">⌘K</span></button>
             <button onClick={() => setPalette(true)} className="rounded-lg p-2 md:hidden" aria-label="Search"><Search className="size-4" /></button>
-            <span title={connected ? "Live updates connected" : "Live updates disconnected"} className={cx("size-2 rounded-full", connected ? "bg-success" : "bg-silver")} />
+            <PresenceStack />
+            <span title={connected ? "Live updates connected" : "Live updates disconnected"} className={cx("relative size-2 rounded-full", connected ? "bg-success" : "bg-silver")}>{connected && <span className="absolute inset-0 animate-ping rounded-full bg-success/60" />}</span>
             <Notifications />
           </div>
         </header>

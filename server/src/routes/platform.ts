@@ -10,7 +10,7 @@ import { audit } from "../lib/audit.js";
 import { enqueue, cancelJob } from "../jobs/queue.js";
 import { getRepo, repoDir } from "../services/analysis.js";
 import { retrieveContext, formatContext, searchCode } from "../services/search.js";
-import { providerFor, requireProvider, aiStatus, SUPPORTED_MODELS, GROQ_MODELS } from "../ai/provider.js";
+import { providerFor, requireProvider, aiStatus, SUPPORTED_MODELS, GROQ_MODELS, listGroqModels, getGroqKey, pickGroqModel } from "../ai/provider.js";
 import { listIntegrations, setIntegration, removeIntegration, getSettings, updateSettings, INTEGRATION_PROVIDERS, type Provider } from "../services/integrations.js";
 import { gh, parseGithubSlug, githubConfigured } from "../services/github.js";
 import { AGENTS, agentByKey } from "../agents/definitions.js";
@@ -485,12 +485,16 @@ platformRouter.get("/search", (req, res) => {
 });
 
 // ======================= Settings & integrations =======================
-platformRouter.get("/settings", (req, res) => {
-  res.json({ settings: getSettings(req.workspaceId!), ai: aiStatus(req.workspaceId!), models: SUPPORTED_MODELS, groqModels: GROQ_MODELS });
+platformRouter.get("/settings", async (req, res) => {
+  const groqKey = getGroqKey(req.workspaceId!);
+  const live = groqKey ? await listGroqModels(groqKey) : null;
+  const ai = aiStatus(req.workspaceId!);
+  if (ai.provider === "groq") ai.model = pickGroqModel(ai.model, live);
+  res.json({ settings: getSettings(req.workspaceId!), ai, models: SUPPORTED_MODELS, groqModels: live?.length ? live : GROQ_MODELS, groqModelsSource: live?.length ? "account" : "default" });
 });
 platformRouter.patch("/settings", requirePerm("settings.manage"), (req, res) => {
   const b = parse(z.object({
-    ai: z.object({ provider: z.enum(["auto", "anthropic", "groq"]).optional(), groqModel: z.enum(GROQ_MODELS as [string, ...string[]]).optional(), model: z.enum(SUPPORTED_MODELS as [string, ...string[]]).optional(), effort: z.enum(["low", "medium", "high", "xhigh", "max"]).optional(), maxContextFiles: z.number().int().min(1).max(40).optional(), monthlyBudgetUsd: z.number().min(0).max(100000).optional(), allowCodeSnippetsToAI: z.boolean().optional() }).optional(),
+    ai: z.object({ provider: z.enum(["auto", "anthropic", "groq"]).optional(), groqModel: z.string().regex(/^[\w./:-]{1,100}$/).optional(), model: z.enum(SUPPORTED_MODELS as [string, ...string[]]).optional(), effort: z.enum(["low", "medium", "high", "xhigh", "max"]).optional(), maxContextFiles: z.number().int().min(1).max(40).optional(), monthlyBudgetUsd: z.number().min(0).max(100000).optional(), allowCodeSnippetsToAI: z.boolean().optional() }).optional(),
     analysis: z.object({ defaultPreset: z.enum(["quick", "full", "security", "architecture"]).optional(), osv: z.boolean().optional() }).optional(),
     notifications: z.object({ analysisComplete: z.boolean().optional(), criticalFindings: z.boolean().optional(), workflowApprovals: z.boolean().optional(), email: z.boolean().optional() }).optional(),
     retention: z.object({ activityDays: z.number().int().min(30).max(3650).optional(), jobLogDays: z.number().int().min(7).max(3650).optional(), chatDays: z.number().int().min(1).max(3650).optional() }).optional(),

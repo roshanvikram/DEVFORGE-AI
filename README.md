@@ -30,7 +30,7 @@ NODE_ENV=production APP_SECRET=... node server/dist/index.js   # serves web/dist
 ## Tests
 
 ```bash
-npm test                                  # server (62) + web (13) suites
+npm test                                  # server (63) + web (13) suites
 npm run test:live --workspace server      # optional live Claude / Groq smoke tests (need ANTHROPIC_API_KEY / GROQ_API_KEY)
 npm run typecheck
 ```

@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import fs from "node:fs";
-import { startGroqStub, GROQ_GOOD, GROQ_RATE_LIMITED } from "./stub-groq.js";
+import { startGroqStub, GROQ_GOOD, GROQ_RATE_LIMITED, GROQ_LIMITED } from "./stub-groq.js";
 import { H, makeFixture, signup, waitJob, FIXTURE_ROOT } from "./helpers.js";
 
 let stub: Awaited<ReturnType<typeof startGroqStub>>;
@@ -62,8 +62,9 @@ describe("Groq provider", () => {
     const st = await u.agent.get("/api/settings");
     expect(st.body.ai.configured).toBe(true);
     expect(st.body.ai.provider).toBe("groq");
-    expect(st.body.ai.model).toBe("llama-3.3-70b-versatile");
-    expect(st.body.groqModels).toContain("openai/gpt-oss-120b");
+    expect(st.body.ai.model).toBe("openai/gpt-oss-120b");
+    expect(st.body.groqModelsSource).toBe("account");
+    expect(st.body.groqModels).toEqual(["llama-3.3-70b-versatile", "openai/gpt-oss-120b"]); // live list, non-chat models removed
   });
 
   it("answers repository questions through Groq chat completions", async () => {
@@ -73,10 +74,10 @@ describe("Groq provider", () => {
     expect(r.body.answer).toContain("Groq says");
     const sent = stub.requests.slice(before).find((x) => x.path === "/openai/v1/chat/completions")!;
     expect(sent.headers.authorization).toBe(`Bearer ${GROQ_GOOD}`);
-    expect(sent.body.model).toBe("llama-3.3-70b-versatile");
+    expect(sent.body.model).toBe("openai/gpt-oss-120b");
     expect(sent.body.messages[0].role).toBe("system");
     const usage = db().prepare(`SELECT * FROM ai_usage WHERE workspace_id = ? AND feature = 'repository_chat' AND ok = 1`).get(u.workspaceId);
-    expect(usage.model).toBe("groq:llama-3.3-70b-versatile");
+    expect(usage.model).toBe("groq:openai/gpt-oss-120b");
     expect(usage.input_tokens).toBe(900);
     expect(usage.output_tokens).toBe(150);
   });
@@ -130,12 +131,25 @@ describe("Groq provider", () => {
     await u.agent.patch("/api/settings").set(H).send({ ai: { provider: "anthropic" } });
     const st = await u.agent.get("/api/settings");
     expect(st.body.ai.configured).toBe(false); // Claude chosen but not connected: no silent fallback
-    await u.agent.patch("/api/settings").set(H).send({ ai: { provider: "groq", groqModel: "openai/gpt-oss-20b" } });
+    await u.agent.patch("/api/settings").set(H).send({ ai: { provider: "groq", groqModel: "llama-3.3-70b-versatile" } });
     const st2 = await u.agent.get("/api/settings");
     expect(st2.body.ai.provider).toBe("groq");
-    expect(st2.body.ai.model).toBe("openai/gpt-oss-20b");
+    expect(st2.body.ai.model).toBe("llama-3.3-70b-versatile");
     delete process.env.GROQ_API_KEY;
     const fake = "gsk_" + "A".repeat(52);
     expect(redact(`key=${fake}`)).not.toContain(fake);
+  });
+
+  it("falls back to a model the account can access when the chosen one is unavailable", async () => {
+    process.env.GROQ_API_KEY = GROQ_LIMITED; // this account lacks llama-3.3-70b-versatile (still the saved choice)
+    const before = stub.requests.length;
+    const r = await u.agent.post(`/api/repositories/${repoId}/chat`).set(H).send({ question: "What does find do?" });
+    expect(r.status).toBe(200);
+    const sent = stub.requests.slice(before).find((x) => x.path === "/openai/v1/chat/completions")!;
+    expect(sent.body.model).toBe("openai/gpt-oss-20b");
+    const st = await u.agent.get("/api/settings");
+    expect(st.body.ai.model).toBe("openai/gpt-oss-20b");
+    expect(st.body.groqModels).toEqual(["openai/gpt-oss-20b"]);
+    delete process.env.GROQ_API_KEY;
   });
 });

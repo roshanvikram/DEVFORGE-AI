@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import { db } from "../db/db.js";
 import { getSecret, getSettings } from "../services/integrations.js";
@@ -47,8 +48,43 @@ const PRICES: Record<string, [number, number]> = {
   "claude-opus-4-8": [5, 25],
 };
 export const SUPPORTED_MODELS = Object.keys(PRICES);
-/** Groq production models usable for chat + tool calling. Cost is only tracked when GROQ_PRICES is set. */
-export const GROQ_MODELS = ["llama-3.3-70b-versatile", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "llama-3.1-8b-instant"];
+/**
+ * Preferred Groq chat models (tool calling + JSON), in order. Groq's catalogue changes and access varies by
+ * account, so the live list from /models decides what is actually used; this only sets the preference.
+ * Cost is only tracked when GROQ_PRICES is set.
+ */
+export const GROQ_MODELS = ["openai/gpt-oss-120b", "llama-3.3-70b-versatile", "openai/gpt-oss-20b", "moonshotai/kimi-k2-instruct", "qwen/qwen3-32b", "llama-3.1-8b-instant"];
+const NON_CHAT = /whisper|tts|playai|orpheus|guard|distil|compound|allam/i;
+const groqModelCache = new Map<string, { at: number; models: string[] }>();
+
+/** Chat models the given Groq key can use right now (cached 10 min). Null when the list cannot be fetched. */
+export async function listGroqModels(apiKey: string): Promise<string[] | null> {
+  const cacheKey = crypto.createHash("sha256").update(apiKey).digest("hex");
+  const hit = groqModelCache.get(cacheKey);
+  if (hit && Date.now() - hit.at < 10 * 60_000) return hit.models;
+  try {
+    const r = await fetch(`${process.env.DEVFORGE_GROQ_BASE_URL ?? "https://api.groq.com"}/openai/v1/models`, { headers: { Authorization: `Bearer ${apiKey}` }, signal: AbortSignal.timeout(10_000) });
+    if (!r.ok) return null;
+    const data: any = await r.json();
+    const models = (data?.data ?? []).filter((m: any) => m?.id && m.active !== false && !NON_CHAT.test(m.id)).map((m: any) => String(m.id)).sort();
+    groqModelCache.set(cacheKey, { at: Date.now(), models });
+    return models;
+  } catch {
+    return null;
+  }
+}
+
+/** The configured model if the account has it, else the most preferred available one. */
+export function pickGroqModel(configured: string | undefined, available: string[] | null): string {
+  const pref = configured && /^[\w./:-]{1,100}$/.test(configured) ? configured : GROQ_MODELS[0];
+  if (!available?.length) return pref;
+  if (available.includes(pref)) return pref;
+  return GROQ_MODELS.find((m) => available.includes(m)) ?? available.find((m) => /gpt-oss|llama|qwen|kimi/i.test(m)) ?? available[0];
+}
+
+export function getGroqKey(workspaceId: string): string | null {
+  return apiKeyFor(workspaceId, "groq")?.key ?? null;
+}
 export type ProviderChoice = "auto" | "anthropic" | "groq";
 
 export class AINotConfiguredError extends HttpError {
@@ -78,7 +114,7 @@ function resolveProvider(workspaceId: string): { id: "anthropic" | "groq"; key: 
 
 function groqModel(workspaceId: string) {
   const m = (getSettings(workspaceId).ai as any).groqModel as string | undefined;
-  return m && GROQ_MODELS.includes(m) ? m : GROQ_MODELS[0];
+  return m && /^[\w./:-]{1,100}$/.test(m) ? m : GROQ_MODELS[0];
 }
 
 /** Optional Groq pricing (USD per million tokens), e.g. GROQ_PRICES="llama-3.3-70b-versatile=0.59/0.79;openai/gpt-oss-20b=0.1/0.5". */
@@ -201,8 +237,15 @@ class GroqProvider implements AIProvider {
     return out;
   }
 
+  private checked = false;
+
   async complete(req: AIRequest): Promise<AIResponse> {
     const started = Date.now();
+    if (!this.checked) {
+      // Use a model this key can actually access (Groq retires models and access differs per account).
+      this.model = pickGroqModel(this.model, await listGroqModels(this.apiKey));
+      this.checked = true;
+    }
     let system = req.system;
     if (req.jsonSchema) system += `\n\nRespond with a single JSON object (no prose, no code fences) that validates against this JSON Schema:\n${JSON.stringify(req.jsonSchema)}`;
     const body: any = { model: this.model, messages: this.toMessages(system, req.messages), max_completion_tokens: Math.min(req.maxTokens ?? 8000, 8000), temperature: 0.2 };
@@ -233,6 +276,10 @@ class GroqProvider implements AIProvider {
       if (res.status === 401) throw new HttpError(502, "The configured Groq API key was rejected. Update it in Integrations → Groq.", "ai_auth");
       if (res.status === 403) throw new HttpError(502, "The Groq API key does not have permission for this request.", "ai_permission");
       if (res.status === 429) throw new HttpError(429, "Groq is rate-limiting requests (or the account's quota is used up). Try again shortly.", "ai_rate_limited");
+      if (res.status === 404 && /model/i.test(message)) {
+        const avail = await listGroqModels(this.apiKey);
+        throw new HttpError(502, `The Groq model "${this.model}" is not available to this key.${avail?.length ? ` Available: ${avail.slice(0, 8).join(", ")}.` : ""} Choose another in Settings → AI & models.`, "ai_model_unavailable");
+      }
       if (res.status === 413) throw new HttpError(502, "The request was too large for the selected Groq model. Pick a model with a larger context window or reduce context files.", "ai_too_large");
       throw new HttpError(502, `Groq request failed (${res.status}): ${message}`, "ai_error");
     }

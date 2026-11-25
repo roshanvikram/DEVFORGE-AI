@@ -67,7 +67,7 @@ export function getGithubToken(workspaceId: string): string | null {
 
 // ---------- workspace settings ----------
 export const DEFAULT_SETTINGS = {
-  ai: { provider: "auto" as "auto" | "anthropic" | "groq", model: "claude-opus-5-5", groqModel: "llama-3.3-70b-versatile", effort: "medium" as "low" | "medium" | "high" | "xhigh" | "max", maxContextFiles: 12, monthlyBudgetUsd: 50, allowCodeSnippetsToAI: true },
+  ai: { provider: "auto" as "auto" | "anthropic" | "groq", model: "claude-opus-5-5", groqModel: "" as string, effort: "medium" as "low" | "medium" | "high" | "xhigh" | "max", maxContextFiles: 12, monthlyBudgetUsd: 50, allowCodeSnippetsToAI: true },
   analysis: { defaultPreset: "quick", osv: true },
   notifications: { analysisComplete: true, criticalFindings: true, workflowApprovals: true, email: false },
   retention: { activityDays: 365, jobLogDays: 90, chatDays: 180 },

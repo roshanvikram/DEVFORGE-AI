@@ -20,7 +20,7 @@ createRoot(document.getElementById("root")!).render(
       <BrowserRouter>
         <AuthProvider>
           <App />
-          <Toaster position="bottom-right" toastOptions={{ style: { background: "rgba(255,255,255,.92)", backdropFilter: "blur(16px)", border: "1px solid #E7E3DA", color: "#242521", fontSize: 13 } }} />
+          <Toaster position="bottom-right" toastOptions={{ style: { background: "var(--glass-strong)", backdropFilter: "blur(16px)", border: "1px solid var(--color-line)", color: "var(--color-ink)", fontSize: 13 } }} />
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

@@ -26,6 +26,7 @@
 | Agents | `agents/` | Definitions, tool registry, runner (AI tool loop or deterministic playbook) |
 | Workflows | `workflows/engine.ts` | DAG validation, node execution, conditions, approvals (pause/resume), retries |
 | Sandbox | `sandbox/runner.ts` | Mode detection, workdir copy without `.git`, Docker or `sandbox-exec` profile |
+| Intelligence | `services/rag.ts`, `services/quantum.ts`, `services/advisories.ts`, `routes/intelligence.ts` | RAG index (`rag_chunks`, `rag_index`) rebuilt after every new snapshot; `quantum.optimize` and `advisory.check` jobs; 10-minute advisory scheduler (`ADVISORY_WATCH_HOURS`, default 12) |
 | Realtime | `lib/events.ts` | Workspace-scoped WebSocket hub, presence, counters |
 
 ### Analysis pipeline (`repo.import` job)

@@ -86,10 +86,10 @@ export default function CommandCenter() {
                   <linearGradient id="go" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#D99A28" stopOpacity={0.35} /><stop offset="1" stopColor="#D99A28" stopOpacity={0} /></linearGradient>
                   <linearGradient id="gr" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#23966A" stopOpacity={0.3} /><stop offset="1" stopColor="#23966A" stopOpacity={0} /></linearGradient>
                 </defs>
-                <CartesianGrid stroke="#EFECE5" vertical={false} />
-                <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#A3A199" }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#A3A199" }} tickLine={false} axisLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #E7E3DA", fontSize: 12 }} />
+                <CartesianGrid stroke="var(--color-line-2)" vertical={false} />
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: "var(--color-faint)" }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "var(--color-faint)" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid var(--color-line)", fontSize: 12 }} />
                 <Area type="monotone" dataKey="opened" stroke="#D99A28" fill="url(#go)" strokeWidth={2} />
                 <Area type="monotone" dataKey="resolved" stroke="#23966A" fill="url(#gr)" strokeWidth={2} />
               </AreaChart>
@@ -113,10 +113,10 @@ export default function CommandCenter() {
           {bySource.length ? (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={bySource} margin={{ left: -20, right: 6 }}>
-                <CartesianGrid stroke="#EFECE5" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#77766F" }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#A3A199" }} tickLine={false} axisLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #E7E3DA", fontSize: 12 }} cursor={{ fill: "#F7F6F2" }} />
+                <CartesianGrid stroke="var(--color-line-2)" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--color-muted)" }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "var(--color-faint)" }} tickLine={false} axisLine={false} allowDecimals={false} />
+                <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid var(--color-line)", fontSize: 12 }} cursor={{ fill: "var(--color-pearl)" }} />
                 {SEVERITIES.map((s) => <Bar key={s} dataKey={s} stackId="a" fill={SEV_COLOR[s]} radius={s === "info" ? [4, 4, 0, 0] : 0} />)}
               </BarChart>
             </ResponsiveContainer>

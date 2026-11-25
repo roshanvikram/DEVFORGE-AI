@@ -6,12 +6,14 @@ import { attachEvents } from "./lib/events.js";
 import { startWorker } from "./jobs/queue.js";
 import { log } from "./lib/logger.js";
 import { startWatcher } from "./services/realtime.js";
+import { startAdvisoryWatch } from "./services/advisories.js";
 
 db(); // open + migrate
 const server = http.createServer(createApp());
 attachEvents(server);
 startWorker();
 startWatcher();
+startAdvisoryWatch();
 server.listen(config.port, () => {
   log.info(`DevForge AI API listening on http://localhost:${config.port}`, { dataDir: config.dataDir, env: config.env });
 });

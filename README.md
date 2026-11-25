@@ -27,10 +27,16 @@ APP_SECRET=$(openssl rand -base64 48) NODE_ENV=production npm run build
 NODE_ENV=production APP_SECRET=... node server/dist/index.js   # serves web/dist too
 ```
 
+## Highlights
+
+- **RAG Copilot** — grounded answers about your code with hybrid retrieval and verified citations.
+- **Fix Optimizer** — quantum-inspired (simulated quantum annealing on classical hardware) fix planning within a time budget.
+- **Live advisory watch, quality gates, auto-sync, signed webhooks, presence and Live Ops** — everything updates in real time over WebSockets.
+
 ## Tests
 
 ```bash
-npm test                                  # server (63) + web (13) suites
+npm test                                  # server (75) + web (13) suites
 npm run test:live --workspace server      # optional live Claude / Groq smoke tests (need ANTHROPIC_API_KEY / GROQ_API_KEY)
 npm run typecheck
 ```

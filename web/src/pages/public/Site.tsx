@@ -16,7 +16,7 @@ export function Logo({ className }: { className?: string }) {
         <span className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_32%_28%,#fff_0%,#e9e6de_40%,#b5b0a4_100%)] shadow-[0_6px_14px_-6px_rgba(60,50,30,.5)]" />
         <span className="absolute inset-[-4px] rounded-full border-[1.5px] border-amber/80" style={{ transform: "rotateX(65deg) rotateZ(-25deg)" }} />
       </span>
-      <span className="text-[16px] font-semibold tracking-[-0.02em] text-ink">DevForge<span className="text-amber-deep"> AI</span></span>
+      <span className="text-[16px] font-semibold tracking-[-0.02em] text-ink">DevForge<span className="aurora-text"> AI</span></span>
     </Link>
   );
 }
@@ -131,7 +131,7 @@ export function Landing() {
           <Badge tone="amber" className="mb-6"><Sparkles className="size-3" /> Autonomous software engineering intelligence</Badge>
           <h1 className="text-[44px] font-semibold leading-[1.02] tracking-[-0.04em] text-ink md:text-[62px]">
             Your AI Engineering Team.<br />
-            <span className="font-display text-[50px] font-normal italic tracking-[-0.01em] text-amber-deep md:text-[70px]">Built Into Your Codebase.</span>
+            <span className="font-display text-[50px] font-normal italic tracking-[-0.01em] aurora-text md:text-[70px] pr-2">Built Into Your Codebase.</span>
           </h1>
           <p className="mt-6 max-w-xl text-[16.5px] leading-relaxed text-muted">
             Understand your software deeply. Detect hidden bugs. Investigate root causes. Identify vulnerabilities. Generate tests. Verify fixes. DevForge AI brings an intelligent engineering team directly into your workflow.
@@ -336,8 +336,8 @@ function PlatformPreview() {
             {t === "Findings" && <div className="space-y-2">{[["high", "Async callback passed to forEach"], ["medium", "Exception silently swallowed"], ["medium", "Database call inside a loop (possible N+1)"], ["low", "Circular dependency between 3 modules"]].map(([s, x]) => <div key={x} className="panel flex items-center gap-3 px-4 py-3"><SeverityBadge severity={s} /><span className="text-[13px] text-ink">{x}</span></div>)}</div>}
             {t === "Architecture" && (
               <svg viewBox="0 0 400 220" className="h-full w-full">
-                {[[60, 60, 200, 40], [60, 60, 200, 120], [200, 40, 330, 70], [200, 120, 330, 70], [200, 120, 300, 180], [60, 160, 200, 120]].map(([a, b, c, d], i) => <line key={i} x1={a} y1={b} x2={c} y2={d} stroke="#C9C6BD" />)}
-                {[[60, 60, "api"], [200, 40, "services"], [200, 120, "db"], [330, 70, "models"], [300, 180, "cache"], [60, 160, "jobs"]].map(([x, y, l]: any) => <g key={l}><circle cx={x} cy={y} r="16" fill="white" stroke={l === "db" ? "#D99A28" : "#C9C6BD"} strokeWidth="1.5" /><text x={x} y={y + 32} textAnchor="middle" fontSize="11" fill="#77766F">{l}</text></g>)}
+                {[[60, 60, 200, 40], [60, 60, 200, 120], [200, 40, 330, 70], [200, 120, 330, 70], [200, 120, 300, 180], [60, 160, 200, 120]].map(([a, b, c, d], i) => <line key={i} x1={a} y1={b} x2={c} y2={d} stroke="var(--color-silver)" />)}
+                {[[60, 60, "api"], [200, 40, "services"], [200, 120, "db"], [330, 70, "models"], [300, 180, "cache"], [60, 160, "jobs"]].map(([x, y, l]: any) => <g key={l}><circle cx={x} cy={y} r="16" fill="white" stroke={l === "db" ? "#D99A28" : "var(--color-silver)"} strokeWidth="1.5" /><text x={x} y={y + 32} textAnchor="middle" fontSize="11" fill="var(--color-muted)">{l}</text></g>)}
               </svg>
             )}
           </div>

@@ -216,7 +216,7 @@ function ProgressStep({ jobId, onDone, onBack }: { jobId: string; onDone: () => 
       <h2 className="text-[22px] font-semibold tracking-[-0.02em] text-ink">Analysing your repository</h2>
       <div className="mt-5 flex items-center justify-between text-[13px]"><span className="text-muted">{j?.message ?? "Queued"}</span>{j && <StatusBadge status={j.status} />}</div>
       <ProgressBar value={j?.progress ?? 0} className="mt-3" />
-      <div className="scroll-thin mt-5 h-56 overflow-y-auto rounded-xl border border-line bg-[#FCFBF8] p-3 font-mono text-[11.5px] leading-relaxed text-ink-2">
+      <div className="scroll-thin mt-5 h-56 overflow-y-auto rounded-xl border border-line bg-[var(--color-code)] p-3 font-mono text-[11.5px] leading-relaxed text-ink-2">
         {(j?.logs ?? []).map((l: any, i: number) => <div key={i} className={l.level === "error" ? "text-danger" : l.level === "warn" ? "text-amber-deep" : ""}>{l.message}</div>)}
       </div>
       {j?.status === "failed" && <div className="mt-4"><Notice tone="danger">{j.error}</Notice></div>}

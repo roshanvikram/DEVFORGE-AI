@@ -129,6 +129,9 @@ function osvSeverity(v: any): Severity {
   return "medium";
 }
 
+/** OSV endpoint (overridable for tests and mirrors). */
+const OSV_URL = () => (process.env.DEVFORGE_OSV_URL ?? "https://api.osv.dev").replace(/\/$/, "");
+
 async function fetchJson(url: string, init?: RequestInit, timeoutMs = 15000): Promise<any> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -152,7 +155,7 @@ export async function queryOsv(deps: Dep[], log: (m: string) => void): Promise<{
   try {
     for (let i = 0; i < queryable.length; i += 500) {
       const chunk = queryable.slice(i, i + 500);
-      const res = await fetchJson("https://api.osv.dev/v1/querybatch", {
+      const res = await fetchJson(`${OSV_URL()}/v1/querybatch`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ queries: chunk.map((x) => ({ package: { name: x.d.name, ecosystem: x.d.ecosystem }, version: x.v })) }),
@@ -169,7 +172,7 @@ export async function queryOsv(deps: Dep[], log: (m: string) => void): Promise<{
         idList.map(async (id, k) => {
           await new Promise((r) => setTimeout(r, (k % 20) * 25));
           try {
-            details.set(id, await fetchJson(`https://api.osv.dev/v1/vulns/${encodeURIComponent(id)}`));
+            details.set(id, await fetchJson(`${OSV_URL()}/v1/vulns/${encodeURIComponent(id)}`));
           } catch { /* keep id-only */ }
         }),
       );
@@ -191,7 +194,7 @@ export async function queryOsv(deps: Dep[], log: (m: string) => void): Promise<{
 
 /** Fetch latest version + license from public registries (npm / PyPI). Bounded concurrency. */
 export async function enrichRegistry(deps: Dep[], log: (m: string) => void): Promise<{ status: "ok" | "partial" | "failed" | "skipped"; checked: number }> {
-  if (!config.osvEnabled) return { status: "skipped", checked: 0 };
+  if (!config.osvEnabled || process.env.DEVFORGE_REGISTRY_LOOKUPS === "false") return { status: "skipped", checked: 0 };
   const targets = deps.filter((d) => d.ecosystem === "npm" || d.ecosystem === "PyPI").slice(0, 300);
   let ok = 0;
   let fail = 0;

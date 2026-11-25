@@ -82,10 +82,10 @@ function AgentNetwork({ agents, runs }: { agents: any[]; runs: any[] }) {
       <div className="flex items-center justify-between border-b border-line-2 px-5 py-3"><h3 className="text-[14px] font-semibold">Agent network</h3><div className="flex gap-3 text-[11.5px] text-muted"><span className="flex items-center gap-1"><span className="size-2 rounded-full bg-amber" />running</span><span className="flex items-center gap-1"><span className="h-0.5 w-4 bg-amber" />handoff</span></div></div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Agent network with live status and handoffs">
         <defs><radialGradient id="core" cx="35%" cy="30%"><stop offset="0" stopColor="#fff" /><stop offset=".6" stopColor="#e9e6de" /><stop offset="1" stopColor="#bdb8ac" /></radialGradient></defs>
-        {agents.map((a) => <line key={a.key} x1={cx0} y1={cy0} x2={pos[a.key].x} y2={pos[a.key].y} stroke="#E7E3DA" strokeDasharray="3 4" />)}
+        {agents.map((a) => <line key={a.key} x1={cx0} y1={cy0} x2={pos[a.key].x} y2={pos[a.key].y} stroke="var(--color-line)" strokeDasharray="3 4" />)}
         {handoffs.map((h, i) => <motion.line key={i} x1={pos[h.from]?.x} y1={pos[h.from]?.y} x2={pos[h.to]?.x} y2={pos[h.to]?.y} stroke="#D99A28" strokeWidth={h.active ? 2.5 : 1.5} strokeOpacity={h.active ? 1 : 0.5} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1 }} />)}
         <circle cx={cx0} cy={cy0} r={30} fill="url(#core)" stroke="#D99A28" strokeOpacity={0.5} />
-        <text x={cx0} y={cy0 + 48} textAnchor="middle" fontSize={11} fill="#77766F">orchestrator</text>
+        <text x={cx0} y={cy0 + 48} textAnchor="middle" fontSize={11} fill="var(--color-muted)">orchestrator</text>
         {agents.map((a) => {
           const p = pos[a.key];
           const on = ACTIVE.includes(a.status);
@@ -93,9 +93,9 @@ function AgentNetwork({ agents, runs }: { agents: any[]; runs: any[] }) {
           return (
             <g key={a.key}>
               {on && <motion.circle cx={p.x} cy={p.y} r={22} fill="none" stroke="#D99A28" initial={{ r: 20, opacity: 0.8 }} animate={{ r: 34, opacity: 0 }} transition={{ repeat: Infinity, duration: 1.6 }} />}
-              <circle cx={p.x} cy={p.y} r={20} fill="white" stroke={on ? "#D99A28" : "#E7E3DA"} strokeWidth={on ? 2 : 1} />
+              <circle cx={p.x} cy={p.y} r={20} fill="white" stroke={on ? "#D99A28" : "var(--color-line)"} strokeWidth={on ? 2 : 1} />
               <foreignObject x={p.x - 9} y={p.y - 9} width={18} height={18}><I className="size-[18px] text-ink-2" /></foreignObject>
-              <text x={p.x} y={p.y + 36} textAnchor="middle" fontSize={11} fill="#242521">{a.name}</text>
+              <text x={p.x} y={p.y + 36} textAnchor="middle" fontSize={11} fill="var(--color-ink)">{a.name}</text>
             </g>
           );
         })}
@@ -216,7 +216,7 @@ function StepRow({ s }: { s: any }) {
         {s.duration_ms != null && <span className="text-[11px] text-faint">{s.duration_ms}ms</span>}
         <span className="ml-auto text-[11px] text-faint">#{s.seq}</span>
       </button>
-      {(open || isText) && (isText ? <div className="mt-2 text-[13px]"><Markdown>{content}</Markdown></div> : <pre className="scroll-thin mt-2 max-h-72 overflow-auto rounded-lg bg-[#FCFBF8] p-2.5 font-mono text-[11px] text-ink-2 ring-1 ring-line">{content}</pre>)}
+      {(open || isText) && (isText ? <div className="mt-2 text-[13px]"><Markdown>{content}</Markdown></div> : <pre className="scroll-thin mt-2 max-h-72 overflow-auto rounded-lg bg-[var(--color-code)] p-2.5 font-mono text-[11px] text-ink-2 ring-1 ring-line">{content}</pre>)}
     </li>
   );
 }

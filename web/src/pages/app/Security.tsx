@@ -52,10 +52,10 @@ function SecurityView({ repo }: { repo: any }) {
               {byCat.length ? (
                 <ResponsiveContainer width="100%" height={Math.max(200, byCat.length * 34)}>
                   <BarChart data={byCat} layout="vertical" margin={{ left: 40 }}>
-                    <CartesianGrid stroke="#EFECE5" horizontal={false} />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: "#A3A199" }} allowDecimals={false} axisLine={false} tickLine={false} />
-                    <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11.5, fill: "#4A4A44" }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{ borderRadius: 10, fontSize: 12 }} cursor={{ fill: "#F7F6F2" }} />
+                    <CartesianGrid stroke="var(--color-line-2)" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: "var(--color-faint)" }} allowDecimals={false} axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11.5, fill: "var(--color-ink-2)" }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ borderRadius: 10, fontSize: 12 }} cursor={{ fill: "var(--color-pearl)" }} />
                     {SEVERITIES.map((s) => <Bar key={s} dataKey={s} stackId="a" fill={SEV_COLOR[s]} />)}
                   </BarChart>
                 </ResponsiveContainer>

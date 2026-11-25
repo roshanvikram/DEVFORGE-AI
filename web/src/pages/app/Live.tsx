@@ -54,10 +54,10 @@ export default function LivePage() {
                   {d.jobs.throughput.length ? (
                     <ResponsiveContainer width="100%" height={200}>
                       <BarChart data={d.jobs.throughput.map((t: any) => ({ ...t, hour: t.hour.slice(11) + ":00" }))} margin={{ left: -24, right: 4, top: 6 }}>
-                        <CartesianGrid stroke="#EFECE5" vertical={false} />
-                        <XAxis dataKey="hour" tick={{ fontSize: 11, fill: "#A3A199" }} tickLine={false} axisLine={false} />
-                        <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#A3A199" }} tickLine={false} axisLine={false} />
-                        <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #E7E3DA", fontSize: 12 }} />
+                        <CartesianGrid stroke="var(--color-line-2)" vertical={false} />
+                        <XAxis dataKey="hour" tick={{ fontSize: 11, fill: "var(--color-faint)" }} tickLine={false} axisLine={false} />
+                        <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--color-faint)" }} tickLine={false} axisLine={false} />
+                        <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid var(--color-line)", fontSize: 12 }} />
                         <Bar dataKey="completed" stackId="a" fill="#23966A" radius={[0, 0, 0, 0]} />
                         <Bar dataKey="failed" stackId="a" fill="#D94C4C" radius={[4, 4, 0, 0]} />
                       </BarChart>
@@ -89,7 +89,7 @@ export default function LivePage() {
             </div>
 
             <Panel title={<span className="flex items-center gap-2"><Radio className="size-4 text-amber" />Event stream</span>} subtitle={`${shown.length} events captured since you opened this page`} pad={false}
-              actions={<div className="flex items-center gap-2"><Select value={filter} onChange={(e) => setFilter(e.target.value)} className="h-8 w-32 text-[12px]">{["all", "job", "scan", "health", "gate", "watch", "webhook", "activity", "notification", "presence"].map((f) => <option key={f} value={f}>{titleCase(f)}</option>)}</Select><Button size="sm" variant="ghost" icon={paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />} onClick={() => setPaused(!paused)}>{paused ? "Resume" : "Pause"}</Button></div>}>
+              actions={<div className="flex items-center gap-2"><Select value={filter} onChange={(e) => setFilter(e.target.value)} className="h-8 w-32 text-[12px]">{["all", "job", "scan", "health", "gate", "watch", "webhook", "advisory", "quantum", "rag", "activity", "notification", "presence"].map((f) => <option key={f} value={f}>{titleCase(f)}</option>)}</Select><Button size="sm" variant="ghost" icon={paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />} onClick={() => setPaused(!paused)}>{paused ? "Resume" : "Pause"}</Button></div>}>
               <div className="scroll-thin max-h-[720px] overflow-y-auto">
                 {shown.length ? (
                   <ul>

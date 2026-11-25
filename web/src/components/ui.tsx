@@ -14,7 +14,7 @@ import { ApiError } from "../lib/api";
 export const cx = clsx;
 
 // ---------------------------------------------------------------- Buttons
-type BtnVariant = "primary" | "secondary" | "ghost" | "danger" | "amber";
+type BtnVariant = "primary" | "secondary" | "ghost" | "danger" | "amber" | "aurora";
 export const Button = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { variant?: BtnVariant; size?: "sm" | "md" | "lg"; loading?: boolean; icon?: ReactNode }>(
   ({ variant = "secondary", size = "md", loading, icon, className, children, disabled, ...rest }, ref) => (
     <button
@@ -25,10 +25,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLBut
         size === "sm" && "h-8 px-3 text-[13px]",
         size === "md" && "h-9 px-4 text-[13.5px]",
         size === "lg" && "h-11 px-6 text-[15px]",
-        variant === "primary" && "bg-ink text-white shadow-[0_1px_0_rgba(255,255,255,.15)_inset,0_6px_16px_-6px_rgba(36,37,33,.5)] hover:bg-[#33342f]",
+        variant === "primary" && "bg-ink text-white shadow-[0_1px_0_rgba(255,255,255,.15)_inset,0_6px_16px_-6px_rgba(36,37,33,.5)] hover:opacity-90",
         variant === "amber" && "bg-amber text-white shadow-[0_1px_0_rgba(255,255,255,.3)_inset,0_8px_20px_-8px_rgba(217,154,40,.8)] hover:bg-amber-deep",
-        variant === "secondary" && "bg-white text-ink border border-line shadow-[0_1px_2px_rgba(36,37,33,.05)] hover:border-silver hover:bg-[#fdfcfa]",
+        variant === "secondary" && "bg-white text-ink border border-line shadow-[0_1px_2px_rgba(36,37,33,.05)] hover:border-silver hover:bg-ivory",
         variant === "ghost" && "text-ink-2 hover:bg-ivory",
+        variant === "aurora" && "aurora-bg text-[#fff] shadow-[0_1px_0_rgba(255,255,255,.25)_inset,0_10px_24px_-10px_rgba(108,92,231,.7)] hover:brightness-110",
         variant === "danger" && "bg-white text-danger border border-danger/30 hover:bg-danger-soft",
         className,
       )}
@@ -92,7 +93,7 @@ export function PageHeader({ title, eyebrow, description, actions, icon }: { tit
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        {eyebrow && <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-deep">{eyebrow}</div>}
+        {eyebrow && <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em]"><span className="aurora-bg h-[2px] w-4 rounded-full" /><span className="aurora-text">{eyebrow}</span></div>}
         <h1 className="flex items-center gap-3 text-[26px] font-semibold tracking-[-0.025em] text-ink">{icon}{title}</h1>
         {description && <p className="mt-1.5 max-w-3xl text-[14px] leading-relaxed text-muted">{description}</p>}
       </div>
@@ -223,7 +224,7 @@ export function Modal({ open, onClose, title, children, footer, width = 560 }: {
   return createPortal(
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed inset-0 z-50 grid place-items-center bg-[#242521]/25 p-4 backdrop-blur-[3px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={onClose}>
+        <motion.div className="fixed inset-0 z-50 grid place-items-center bg-[var(--color-ink)]/25 p-4 backdrop-blur-[3px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={onClose}>
           <motion.div role="dialog" aria-modal className="glass-strong max-h-[88vh] w-full overflow-hidden rounded-2xl" style={{ maxWidth: width }} initial={{ y: 12, scale: 0.98, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={{ y: 8, opacity: 0 }} transition={{ type: "spring", duration: 0.35, bounce: 0.1 }} onMouseDown={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-line-2 px-5 py-4">
               <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
@@ -246,7 +247,7 @@ export function CodeBlock({ code, language = "tsx", startLine = 1, highlightLine
   return (
     <Highlight theme={themes.github} code={code.replace(/\n$/, "")} language={lang}>
       {({ tokens, getLineProps, getTokenProps }) => (
-        <pre className="scroll-thin overflow-auto rounded-xl border border-line bg-[#FCFBF8] py-3 font-mono text-[12.5px] leading-[1.6]" style={{ maxHeight }}>
+        <pre className="scroll-thin overflow-auto rounded-xl border border-line bg-[var(--color-code)] py-3 font-mono text-[12.5px] leading-[1.6]" style={{ maxHeight }}>
           {tokens.map((line, i) => {
             const n = i + startLine;
             const { className, ...lp } = getLineProps({ line });
@@ -265,7 +266,7 @@ export function CodeBlock({ code, language = "tsx", startLine = 1, highlightLine
 export function DiffView({ diff, maxHeight = 560 }: { diff: string; maxHeight?: number }) {
   const lines = diff.split("\n");
   return (
-    <pre className="scroll-thin overflow-auto rounded-xl border border-line bg-[#FCFBF8] py-2 font-mono text-[12px] leading-[1.55]" style={{ maxHeight }}>
+    <pre className="scroll-thin overflow-auto rounded-xl border border-line bg-[var(--color-code)] py-2 font-mono text-[12px] leading-[1.55]" style={{ maxHeight }}>
       {lines.map((l, i) => (
         <div key={i} className={cx("px-3 whitespace-pre",
           l.startsWith("+") && !l.startsWith("+++") && "bg-success-soft/70 text-[#155d42]",
@@ -333,7 +334,7 @@ export function HealthRing({ score, size = 120, label = "Health", showGrade = fa
           const r1 = size / 2 - 2, r2 = size / 2 - (i % 5 === 0 ? 6 : 4);
           return <line key={i} x1={size / 2 + Math.cos(a) * r1} y1={size / 2 + Math.sin(a) * r1} x2={size / 2 + Math.cos(a) * r2} y2={size / 2 + Math.sin(a) * r2} stroke={i / ticks.length <= v ? g.color : "#E2DED5"} strokeOpacity={i / ticks.length <= v ? 0.55 : 1} strokeWidth={1} />;
         })}
-        <circle cx={size / 2} cy={size / 2} r={r} stroke="#EFECE5" strokeWidth={stroke} fill="none" />
+        <circle cx={size / 2} cy={size / 2} r={r} stroke="var(--color-line-2)" strokeWidth={stroke} fill="none" />
         <motion.circle cx={size / 2} cy={size / 2} r={r} stroke={`url(#${id})`} strokeWidth={stroke} strokeLinecap="round" fill="none" strokeDasharray={c} initial={{ strokeDashoffset: c }} animate={{ strokeDashoffset: c * (1 - v) }} transition={{ duration: 1, ease: "easeOut" }} style={{ filter: score != null ? `drop-shadow(0 0 6px ${g.color}55)` : undefined }} />
       </svg>
       <div className="absolute inset-0 grid place-items-center text-center">

@@ -55,6 +55,8 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
           case "health": invalidate(["health", "dashboard", "repos"]); break;
           case "gate": invalidate(["quality-gate"]); break;
           case "watch": case "webhook": invalidate(["watch", "live"]); break;
+          case "advisory": invalidate(["advisories", "deps", "findings", "dashboard"]); break;
+          case "rag.index": invalidate(["rag"]); break;
         }
       };
     };

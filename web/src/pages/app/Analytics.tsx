@@ -7,8 +7,8 @@ import { useRepo } from "../../lib/repo";
 import { PageHeader, Panel, Select, Stat, EmptyState, LoadingBlock, ErrorState, Table } from "../../components/ui";
 import { SEVERITIES, SEV_COLOR, titleCase, usd, num } from "../../lib/format";
 
-const tt = { contentStyle: { borderRadius: 10, border: "1px solid #E7E3DA", fontSize: 12 } };
-const axis = { tick: { fontSize: 11, fill: "#A3A199" }, axisLine: false, tickLine: false } as const;
+const tt = { contentStyle: { borderRadius: 10, border: "1px solid var(--color-line)", fontSize: 12 } };
+const axis = { tick: { fontSize: 11, fill: "var(--color-faint)" }, axisLine: false, tickLine: false } as const;
 const SRC_COLORS: Record<string, string> = { bug: "#D99A28", security: "#D94C4C", secret: "#B4232C", dependency: "#8A6FA0", performance: "#3B6EA8", debt: "#6B7F96" };
 
 export default function Analytics() {
@@ -46,7 +46,7 @@ export default function Analytics() {
           <div className="grid gap-4 lg:grid-cols-2">
             <Panel title="Findings opened by analyzer vs resolved">
               <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={opened} margin={{ left: -20 }}><CartesianGrid stroke="#EFECE5" vertical={false} /><XAxis dataKey="day" {...axis} /><YAxis {...axis} allowDecimals={false} /><Tooltip {...tt} cursor={{ fill: "#F7F6F2" }} /><Legend wrapperStyle={{ fontSize: 11 }} />
+                <BarChart data={opened} margin={{ left: -20 }}><CartesianGrid stroke="var(--color-line-2)" vertical={false} /><XAxis dataKey="day" {...axis} /><YAxis {...axis} allowDecimals={false} /><Tooltip {...tt} cursor={{ fill: "var(--color-pearl)" }} /><Legend wrapperStyle={{ fontSize: 11 }} />
                   {Object.keys(SRC_COLORS).map((s) => <Bar key={s} dataKey={s} stackId="o" fill={SRC_COLORS[s]} />)}
                   <Bar dataKey="resolved" fill="#23966A" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -55,17 +55,17 @@ export default function Analytics() {
             <Panel title="Risk matrix" subtitle="Open findings by severity × confidence">
               <table className="w-full text-center text-[12.5px]">
                 <thead><tr><th /><th className="py-2 font-medium text-muted">high conf.</th><th className="font-medium text-muted">medium</th><th className="font-medium text-muted">low</th></tr></thead>
-                <tbody>{SEVERITIES.map((s) => <tr key={s}><td className="py-1.5 pr-2 text-left capitalize text-ink-2">{s}</td>{["high", "medium", "low"].map((c) => { const n = matrix[s]?.[c] ?? 0; return <td key={c} className="p-1"><div className="rounded-lg py-2 font-semibold tabular-nums" style={{ background: n ? `${SEV_COLOR[s]}${Math.min(99, 15 + n * 6).toString(16).padStart(2, "0")}` : "#F7F6F2", color: n > 6 ? "white" : "#242521" }}>{n}</div></td>; })}</tr>)}</tbody>
+                <tbody>{SEVERITIES.map((s) => <tr key={s}><td className="py-1.5 pr-2 text-left capitalize text-ink-2">{s}</td>{["high", "medium", "low"].map((c) => { const n = matrix[s]?.[c] ?? 0; return <td key={c} className="p-1"><div className="rounded-lg py-2 font-semibold tabular-nums" style={{ background: n ? `${SEV_COLOR[s]}${Math.min(99, 15 + n * 6).toString(16).padStart(2, "0")}` : "var(--color-pearl)", color: n > 6 ? "white" : "var(--color-ink)" }}>{n}</div></td>; })}</tr>)}</tbody>
               </table>
             </Panel>
             <Panel title="Test outcomes">
-              {d.tests.length ? <ResponsiveContainer width="100%" height={220}><AreaChart data={d.tests} margin={{ left: -20 }}><CartesianGrid stroke="#EFECE5" vertical={false} /><XAxis dataKey="day" {...axis} /><YAxis {...axis} allowDecimals={false} /><Tooltip {...tt} /><Area dataKey="passed" stackId="t" stroke="#23966A" fill="#23966A33" /><Area dataKey="failed" stackId="t" stroke="#D94C4C" fill="#D94C4C33" /></AreaChart></ResponsiveContainer> : <EmptyState title="No executed tests" />}
+              {d.tests.length ? <ResponsiveContainer width="100%" height={220}><AreaChart data={d.tests} margin={{ left: -20 }}><CartesianGrid stroke="var(--color-line-2)" vertical={false} /><XAxis dataKey="day" {...axis} /><YAxis {...axis} allowDecimals={false} /><Tooltip {...tt} /><Area dataKey="passed" stackId="t" stroke="#23966A" fill="#23966A33" /><Area dataKey="failed" stackId="t" stroke="#D94C4C" fill="#D94C4C33" /></AreaChart></ResponsiveContainer> : <EmptyState title="No executed tests" />}
             </Panel>
             <Panel title="Code review risk">
-              {d.reviews.length ? <ResponsiveContainer width="100%" height={220}><LineChart data={d.reviews} margin={{ left: -20 }}><CartesianGrid stroke="#EFECE5" vertical={false} /><XAxis dataKey="day" {...axis} /><YAxis {...axis} domain={[0, 100]} /><Tooltip {...tt} /><Line dataKey="risk" stroke="#D99A28" strokeWidth={2} dot={{ r: 3 }} name="avg risk" /></LineChart></ResponsiveContainer> : <EmptyState title="No reviews in this period" />}
+              {d.reviews.length ? <ResponsiveContainer width="100%" height={220}><LineChart data={d.reviews} margin={{ left: -20 }}><CartesianGrid stroke="var(--color-line-2)" vertical={false} /><XAxis dataKey="day" {...axis} /><YAxis {...axis} domain={[0, 100]} /><Tooltip {...tt} /><Line dataKey="risk" stroke="#D99A28" strokeWidth={2} dot={{ r: 3 }} name="avg risk" /></LineChart></ResponsiveContainer> : <EmptyState title="No reviews in this period" />}
             </Panel>
             <Panel title="Codebase size over snapshots">
-              {d.snapshots.length ? <ResponsiveContainer width="100%" height={220}><LineChart data={d.snapshots.map((s: any) => ({ ...s, t: s.created_at.slice(0, 10) }))} margin={{ left: 0 }}><CartesianGrid stroke="#EFECE5" vertical={false} /><XAxis dataKey="t" {...axis} /><YAxis {...axis} /><Tooltip {...tt} /><Line dataKey="loc" stroke="#6B7F96" strokeWidth={2} name="LOC" /></LineChart></ResponsiveContainer> : <EmptyState title="No snapshots" />}
+              {d.snapshots.length ? <ResponsiveContainer width="100%" height={220}><LineChart data={d.snapshots.map((s: any) => ({ ...s, t: s.created_at.slice(0, 10) }))} margin={{ left: 0 }}><CartesianGrid stroke="var(--color-line-2)" vertical={false} /><XAxis dataKey="t" {...axis} /><YAxis {...axis} /><Tooltip {...tt} /><Line dataKey="loc" stroke="#6B7F96" strokeWidth={2} name="LOC" /></LineChart></ResponsiveContainer> : <EmptyState title="No snapshots" />}
             </Panel>
             <Panel title="Mean time to resolve" pad={false}>
               {d.resolution.length ? <Table head={["Analyzer", "Resolved", "Avg days"]}>{d.resolution.map((r: any) => <tr key={r.source}><td className="px-4 py-2 capitalize">{r.source}</td><td className="px-4 py-2 tabular-nums">{r.n}</td><td className="px-4 py-2 tabular-nums">{r.avg_days?.toFixed(1)}</td></tr>)}</Table> : <EmptyState title="Nothing resolved yet" />}

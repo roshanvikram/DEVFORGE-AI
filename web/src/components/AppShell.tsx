@@ -5,7 +5,7 @@ import { Command } from "cmdk";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, FolderGit2, Network, Layers, Bug, FileSearch, ShieldCheck, GitPullRequest, GitMerge, FlaskConical, History, Boxes, Gauge, Hammer,
-  Bot, Workflow, BarChart3, BookOpen, FileText, Activity, Users, Plug, Settings, HelpCircle, Search, Bell, ChevronsUpDown, Radio, BadgeCheck, RefreshCw, PanelLeftClose, PanelLeft,
+  Bot, Workflow, BarChart3, BookOpen, FileText, Activity, Users, Plug, Settings, HelpCircle, Search, Bell, ChevronsUpDown, Radio, BadgeCheck, RefreshCw, Sparkles, Atom, PanelLeftClose, PanelLeft,
   LogOut, Menu, X, Check, Plus, Circle,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
@@ -22,6 +22,7 @@ export const NAV_SECTIONS: { title?: string; items: { to: string; label: string;
   { title: "Detect", items: [{ to: "/app/bugs", label: "Bug Intelligence", icon: Bug }, { to: "/app/investigations", label: "Investigations", icon: FileSearch }, { to: "/app/security", label: "Security Center", icon: ShieldCheck }, { to: "/app/performance", label: "Performance Lab", icon: Gauge }, { to: "/app/debt", label: "Technical Debt", icon: Hammer }] },
   { title: "Change", items: [{ to: "/app/reviews", label: "Code Review", icon: GitPullRequest }, { to: "/app/pulls", label: "Pull Requests", icon: GitMerge }, { to: "/app/tests", label: "Test Forge", icon: FlaskConical }, { to: "/app/regressions", label: "Regression Analysis", icon: History }] },
   { title: "Automate", items: [{ to: "/app/agents", label: "AI Agents", icon: Bot }, { to: "/app/workflows", label: "Workflow Studio", icon: Workflow }, { to: "/app/sync", label: "Auto-Sync & Webhooks", icon: RefreshCw }] },
+  { title: "Intelligence", items: [{ to: "/app/copilot", label: "RAG Copilot", icon: Sparkles }, { to: "/app/optimizer", label: "Fix Optimizer", icon: Atom }] },
   { title: "Live", items: [{ to: "/app/live", label: "Live Ops", icon: Radio }, { to: "/app/gates", label: "Quality Gates", icon: BadgeCheck }] },
   { title: "Insight", items: [{ to: "/app/analytics", label: "Analytics", icon: BarChart3 }, { to: "/app/knowledge", label: "Knowledge Base", icon: BookOpen }, { to: "/app/reports", label: "Reports", icon: FileText }, { to: "/app/activity", label: "Activity", icon: Activity }] },
 ];
@@ -33,7 +34,7 @@ function NavItem({ to, label, icon: I, collapsed, onClick }: { to: string; label
       className={({ isActive }) => cx("group relative flex items-center gap-2.5 rounded-[9px] px-2.5 py-[7px] text-[13px] transition", isActive ? "bg-white text-ink shadow-[0_1px_2px_rgba(36,37,33,.06),0_0_0_1px_var(--color-line)]" : "text-muted hover:bg-white/60 hover:text-ink", collapsed && "justify-center px-0")}>
       {({ isActive }) => (
         <>
-          {isActive && <span className="absolute left-0 top-1/2 h-4 w-[2.5px] -translate-y-1/2 rounded-full bg-amber" />}
+          {isActive && <span className="aurora-bg absolute left-0 top-1/2 h-4 w-[2.5px] -translate-y-1/2 rounded-full" />}
           <I className={cx("size-[16px] shrink-0", isActive ? "text-amber-deep" : "")} strokeWidth={1.8} />
           {!collapsed && <span className="truncate">{label}</span>}
         </>
@@ -161,7 +162,7 @@ function CommandPalette({ open, setOpen }: { open: boolean; setOpen: (v: boolean
   return (
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed inset-0 z-50 bg-[#242521]/20 backdrop-blur-[2px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={() => setOpen(false)}>
+        <motion.div className="fixed inset-0 z-50 bg-[var(--color-ink)]/20 backdrop-blur-[2px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={() => setOpen(false)}>
           <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="glass-strong mx-auto mt-[12vh] w-[min(640px,92vw)] overflow-hidden rounded-2xl" onMouseDown={(e) => e.stopPropagation()}>
             <Command shouldFilter={false} label="Command palette" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:text-[10.5px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.12em] [&_[cmdk-group-heading]]:text-faint">
               <div className="flex items-center gap-2 border-b border-line-2 px-4"><Search className="size-4 text-muted" /><Command.Input autoFocus value={q} onValueChange={setQ} placeholder="Search pages, findings, code, docs…" className="h-12 flex-1 bg-transparent text-[14px] outline-none placeholder:text-faint" /><span className="kbd">esc</span></div>

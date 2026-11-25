@@ -68,7 +68,7 @@ export function HealthPanel({ repoId }: { repoId: string }) {
                 <AreaChart data={history} margin={{ left: 0, right: 0, top: 4, bottom: 0 }}>
                   <defs><linearGradient id="hh" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={g.color} stopOpacity={0.35} /><stop offset="1" stopColor={g.color} stopOpacity={0} /></linearGradient></defs>
                   <YAxis domain={[0, 100]} hide />
-                  <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #E7E3DA", fontSize: 12 }} labelFormatter={(_, p: any) => fmtDate(p?.[0]?.payload?.created_at)} formatter={(v: any) => [v, "Score"]} />
+                  <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid var(--color-line)", fontSize: 12 }} labelFormatter={(_, p: any) => fmtDate(p?.[0]?.payload?.created_at)} formatter={(v: any) => [v, "Score"]} />
                   <Area type="monotone" dataKey="score" stroke={g.color} strokeWidth={2} fill="url(#hh)" isAnimationActive />
                 </AreaChart>
               </ResponsiveContainer>

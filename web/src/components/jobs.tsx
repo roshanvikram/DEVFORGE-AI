@@ -37,7 +37,7 @@ export function JobPanel({ jobId, onFinished, compact }: { jobId: string; onFini
       {active && <ProgressBar value={j.progress} className="mt-3" />}
       {j.error && <div className="mt-2 text-[12.5px] text-danger">{j.error}</div>}
       {showLogs && (
-        <div className="scroll-thin mt-3 max-h-52 overflow-y-auto rounded-lg bg-[#FCFBF8] p-3 font-mono text-[11.5px] leading-relaxed text-ink-2 ring-1 ring-line">
+        <div className="scroll-thin mt-3 max-h-52 overflow-y-auto rounded-lg bg-[var(--color-code)] p-3 font-mono text-[11.5px] leading-relaxed text-ink-2 ring-1 ring-line">
           {j.logs.length ? j.logs.map((l: any, i: number) => <div key={i} className={l.level === "error" ? "text-danger" : l.level === "warn" ? "text-amber-deep" : ""}>{l.message}</div>) : <div className="text-faint">Waiting for output…</div>}
         </div>
       )}

@@ -43,6 +43,8 @@ const Ad = () => import("./pages/app/Admin");
 const Team = lazy(() => Ad().then((m) => ({ default: m.TeamPage })));
 const Integrations = lazy(() => Ad().then((m) => ({ default: m.IntegrationsPage })));
 const Settings = lazy(() => Ad().then((m) => ({ default: m.SettingsPage })));
+const Copilot = lazy(() => import("./pages/app/Copilot"));
+const Optimizer = lazy(() => import("./pages/app/Optimizer"));
 const Live = lazy(() => import("./pages/app/Live"));
 const Gates = lazy(() => import("./pages/app/Gates"));
 const Sync = lazy(() => import("./pages/app/Sync"));
@@ -136,6 +138,8 @@ export default function App() {
         <Route path="settings" element={page(<Settings />)} />
         <Route path="help" element={page(<Help />)} />
         <Route path="live" element={page(<Live />)} />
+        <Route path="copilot" element={page(<Copilot />)} />
+        <Route path="optimizer" element={page(<Optimizer />)} />
         <Route path="gates" element={page(<Gates />)} />
         <Route path="sync" element={page(<Sync />)} />
         <Route path="*" element={<Navigate to="/app" replace />} />

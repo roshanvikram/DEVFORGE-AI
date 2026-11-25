@@ -21,13 +21,13 @@ const TYPES: Record<string, { label: string; icon: any; color: string; desc: str
   test_generator: { label: "Test Generator", icon: FlaskConical, color: "#23966A", desc: "Generate + execute tests for a file → tests.*" },
   test_runner: { label: "Test Runner", icon: TestTube2, color: "#23966A", desc: "Run the existing suite in the sandbox → tests.*" },
   code_review: { label: "Code Review", icon: GitPullRequest, color: "#3B6EA8", desc: "Review a commit (default HEAD) → review.risk" },
-  condition: { label: "Condition", icon: GitBranch, color: "#4A4A44", desc: "Branch on results, e.g. security.critical > 0", handles: ["true", "false"] },
+  condition: { label: "Condition", icon: GitBranch, color: "var(--color-ink-2)", desc: "Branch on results, e.g. security.critical > 0", handles: ["true", "false"] },
   approval: { label: "Approval", icon: UserCheck, color: "#D99A28", desc: "Pause until a human approves", handles: ["approved", "rejected"] },
   notification: { label: "Notification", icon: Bell, color: "#6B7F96", desc: "In-app, Slack or webhook" },
-  report: { label: "Report", icon: FileText, color: "#4A4A44", desc: "Generate a Markdown report" },
-  end: { label: "End", icon: CircleStop, color: "#A3A199", desc: "End of workflow" },
+  report: { label: "Report", icon: FileText, color: "var(--color-ink-2)", desc: "Generate a Markdown report" },
+  end: { label: "End", icon: CircleStop, color: "var(--color-faint)", desc: "End of workflow" },
 };
-const STATE_COLOR: Record<string, string> = { running: "#D99A28", completed: "#23966A", failed: "#D94C4C", waiting: "#6B7F96", skipped: "#C9C6BD" };
+const STATE_COLOR: Record<string, string> = { running: "#D99A28", completed: "#23966A", failed: "#D94C4C", waiting: "#6B7F96", skipped: "var(--color-silver)" };
 
 function WfNode({ data, selected, type }: any) {
   const t = TYPES[type] ?? TYPES.end;
@@ -149,9 +149,9 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     setName(q.data.name);
     setDesc(q.data.description ?? "");
     setNodes(q.data.definition.nodes.map((n: any) => ({ ...n, position: n.position ?? { x: 0, y: 0 } })));
-    setEdges(q.data.definition.edges.map((e: any) => ({ ...e, animated: false, style: { stroke: "#C9C6BD", strokeWidth: 1.6 } })));
+    setEdges(q.data.definition.edges.map((e: any) => ({ ...e, animated: false, style: { stroke: "var(--color-silver)", strokeWidth: 1.6 } })));
   }, [q.data]);
-  const onConnect = useCallback((c: Connection) => { setEdges((es) => addEdge({ ...c, id: `e${Date.now()}`, style: { stroke: "#C9C6BD", strokeWidth: 1.6 } }, es)); setDirty(true); }, []);
+  const onConnect = useCallback((c: Connection) => { setEdges((es) => addEdge({ ...c, id: `e${Date.now()}`, style: { stroke: "var(--color-silver)", strokeWidth: 1.6 } }, es)); setDirty(true); }, []);
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
     const type = e.dataTransfer.getData("application/df-node");
@@ -198,7 +198,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
         <Panel pad={false} className="h-[620px] overflow-hidden">
           <div className="h-full" onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }} onDrop={onDrop}>
             <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} onNodesChange={(c) => { onNodesChange(c); if (c.toArray().some((x) => x.type === "position" || x.type === "remove")) setDirty(true); }} onEdgesChange={(c) => { onEdgesChange(c); if (c.toArray().some((x) => x.type === "remove")) setDirty(true); }} onConnect={onConnect} onNodeClick={(_, n) => setSelId(n.id)} onPaneClick={() => setSelId(null)} nodesDraggable={editable} nodesConnectable={editable} deleteKeyCode={editable ? ["Backspace", "Delete"] : null} fitView proOptions={{ hideAttribution: true }}>
-              <Background color="#E7E3DA" gap={20} size={1.2} />
+              <Background color="var(--color-line)" gap={20} size={1.2} />
               <Controls position="bottom-right" />
               <MiniMap pannable zoomable maskColor="rgba(247,246,242,.7)" nodeColor={(n) => TYPES[n.type ?? "end"]?.color ?? "#ccc"} />
             </ReactFlow>
@@ -266,11 +266,11 @@ function ExecutionView({ id, onBack }: { id: string; onBack: () => void }) {
         <div key={a.id} className="mb-4"><Notice tone="amber" icon={<UserCheck className="size-4 text-amber-deep" />}><div className="flex flex-wrap items-center gap-3"><span><b>{a.title}</b> is waiting for approval.</span>{can("approvals.decide") && <span className="ml-auto flex gap-2"><Button size="sm" variant="danger" onClick={async () => { await post(`/approvals/${a.id}/decide`, { decision: "rejected" }); qc.invalidateQueries(); }}>Reject</Button><Button size="sm" variant="primary" onClick={async () => { await post(`/approvals/${a.id}/decide`, { decision: "approved" }); qc.invalidateQueries(); }}>Approve</Button></span>}</div></Notice></div>
       ))}
       <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
-        <Panel pad={false} className="h-[520px] overflow-hidden"><ReactFlowProvider><ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView nodesConnectable={false} nodesDraggable={false} proOptions={{ hideAttribution: true }}><Background color="#E7E3DA" gap={20} size={1.2} /><Controls showInteractive={false} position="bottom-right" /></ReactFlow></ReactFlowProvider></Panel>
+        <Panel pad={false} className="h-[520px] overflow-hidden"><ReactFlowProvider><ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView nodesConnectable={false} nodesDraggable={false} proOptions={{ hideAttribution: true }}><Background color="var(--color-line)" gap={20} size={1.2} /><Controls showInteractive={false} position="bottom-right" /></ReactFlow></ReactFlowProvider></Panel>
         <div className="space-y-4">
           <Panel title="Steps" pad={false}>
             {x.definition.nodes.map((n: any) => { const st = x.node_states[n.id]; return (
-              <details key={n.id} className="border-b border-line-2 last:border-0"><summary className="flex cursor-pointer items-center gap-2 px-4 py-2.5 text-[12.5px]"><StatusBadge status={st?.status ?? "pending"} /><span className="font-medium">{n.data?.label ?? titleCase(n.type)}</span>{st?.attempts > 1 && <Badge>{st.attempts} attempts</Badge>}</summary>{(st?.output || st?.error) && <pre className="mx-4 mb-3 max-h-48 overflow-auto rounded-lg bg-[#FCFBF8] p-2 font-mono text-[11px] text-ink-2 ring-1 ring-line">{st.error ?? JSON.stringify(st.output, null, 2)}</pre>}</details>
+              <details key={n.id} className="border-b border-line-2 last:border-0"><summary className="flex cursor-pointer items-center gap-2 px-4 py-2.5 text-[12.5px]"><StatusBadge status={st?.status ?? "pending"} /><span className="font-medium">{n.data?.label ?? titleCase(n.type)}</span>{st?.attempts > 1 && <Badge>{st.attempts} attempts</Badge>}</summary>{(st?.output || st?.error) && <pre className="mx-4 mb-3 max-h-48 overflow-auto rounded-lg bg-[var(--color-code)] p-2 font-mono text-[11px] text-ink-2 ring-1 ring-line">{st.error ?? JSON.stringify(st.output, null, 2)}</pre>}</details>
             ); })}
           </Panel>
           <Panel title="Logs" pad={false}><div className="scroll-thin max-h-72 overflow-y-auto p-3 font-mono text-[11px] leading-relaxed">{x.logs.map((l: any, i: number) => <div key={i} className={l.level === "error" ? "text-danger" : l.level === "warn" ? "text-amber-deep" : "text-ink-2"}><span className="text-faint">{l.at.slice(11, 19)}</span> {l.node && <span className="text-muted">[{l.node}]</span>} {l.message}</div>)}{!x.logs.length && <span className="text-faint">No logs yet.</span>}</div></Panel>

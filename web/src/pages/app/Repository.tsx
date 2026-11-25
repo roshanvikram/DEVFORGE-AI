@@ -78,7 +78,7 @@ function TreeView({ node, depth, selected, onSelect, open, toggle }: { node: Tre
     <>
       {kids.map((k) => k.file ? (
         <button key={k.path} onClick={() => onSelect(k.path)} className={cx("flex w-full items-center gap-1.5 rounded-md py-1 pr-2 text-left text-[12.5px]", selected === k.path ? "bg-amber-soft/60 text-ink" : "text-ink-2 hover:bg-ivory")} style={{ paddingLeft: depth * 12 + 8 }}>
-          <File className="size-3.5 shrink-0" style={{ color: LANG_COLOR[k.file.language] ?? "#A3A199" }} /><span className="truncate">{k.name}</span>
+          <File className="size-3.5 shrink-0" style={{ color: LANG_COLOR[k.file.language] ?? "var(--color-faint)" }} /><span className="truncate">{k.name}</span>
           {k.file.findings > 0 && <span className="ml-auto rounded-full bg-amber-soft px-1.5 text-[10px] font-semibold text-amber-deep">{k.file.findings}</span>}
         </button>
       ) : (

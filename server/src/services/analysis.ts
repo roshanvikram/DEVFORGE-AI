@@ -3,7 +3,7 @@ import path from "node:path";
 import { db, now, json } from "../db/db.js";
 import { newId } from "../lib/ids.js";
 import { config } from "../config.js";
-import { registerHandler, type JobCtx } from "../jobs/queue.js";
+import { registerHandler, enqueue, type JobCtx } from "../jobs/queue.js";
 import { cloneRepo, copyLocalRepo, gitPull, validateGitUrl, gitHead } from "../engine/ingest.js";
 import { indexRepository, loadContext, reparse, type IndexContext } from "../engine/indexer.js";
 import { runPatternRules, runSecretRules } from "../engine/rules/patterns.js";
@@ -233,6 +233,7 @@ async function importAndAnalyze(ctx: JobCtx) {
     const result = await analyzeSnapshot({ ...repo, current_snapshot_id: ictx.snapshotId }, ictx, kinds, ctx);
     setStatus("ready");
     const post = afterAnalysis(repo.id, (ctx.payload as any).trigger ?? "analysis");
+    enqueue("rag.index", repo.workspace_id, { repositoryId: repo.id }, { userId: ctx.userId }); // keep the RAG copilot index in step with the new snapshot
     ctx.progress(1, "Analysis complete");
     audit({ workspaceId: repo.workspace_id, actorId: ctx.userId, actorType: "system", action: "repository.analyzed", entityType: "repository", entityId: repo.id, data: { kinds, snapshotId: ictx.snapshotId } });
     const newFindings = result.scans.reduce((a: number, s: any) => a + (s.created ?? 0), 0);

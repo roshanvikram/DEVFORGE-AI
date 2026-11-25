@@ -8,6 +8,7 @@ import { useAuth } from "../../lib/auth";
 import { NeedsRepo } from "../../components/AppShell";
 import { PageHeader, Panel, Button, Input, Select, Stat, EmptyState, LoadingBlock, Badge, SeverityBadge, StatusBadge, Notice, Table, Modal, Tabs, cx } from "../../components/ui";
 import { JobPanel, useActiveJobs } from "../../components/jobs";
+import { AdvisoryWatch } from "../../components/advisories";
 import { timeAgo } from "../../lib/format";
 
 const COPYLEFT = /\b(A?GPL|LGPL|SSPL|EUPL|MPL|CC-BY-SA|OSL)/i;
@@ -38,6 +39,7 @@ function DepsView({ repo }: { repo: any }) {
       <PageHeader eyebrow="Dependency Intelligence" icon={<Boxes className="size-6 text-amber-deep" />} title="Dependencies" description="Parsed from your manifests and lockfiles (npm, PyPI, Go, crates.io, RubyGems). Vulnerabilities from OSV.dev and npm audit; latest versions and licenses from public registries."
         actions={can("analysis.run") && <Button variant="primary" icon={<ScanSearch className="size-4" />} onClick={scan}>Scan dependencies</Button>} />
       {jobs.length > 0 && <div className="mb-4 space-y-2">{jobs.map((j: any) => <JobPanel key={j.id} jobId={j.id} compact />)}</div>}
+      <AdvisoryWatch repo={repo} />
       {q.data?.lastScan ? <div className="mb-4 flex flex-wrap items-center gap-2 text-[12px] text-muted">Last scan {timeAgo(q.data.lastScan.finished_at)} · {Object.entries(tools).map(([k, v]: any) => <span key={k} title={v.note}><Badge tone={v.status === "ok" ? "success" : v.status === "failed" ? "danger" : "neutral"}>{k}: {v.status}</Badge></span>)}</div> : <div className="mb-4"><Notice tone="amber">No dependency scan has run for this snapshot yet.</Notice></div>}
       <div className="mb-4 grid gap-3 md:grid-cols-5">
         <Stat label="Dependencies" value={deps.length} sub={`${deps.filter((d: any) => d.dev).length} dev`} />
@@ -101,7 +103,7 @@ function DepGraph({ deps, onSelect, status }: { deps: any[]; onSelect: (d: any) 
   if (!deps.length) return <Panel><EmptyState title="No dependencies" /></Panel>;
   const W = 1000;
   const H = Math.max(360, Math.ceil(deps.length / manifests.length) * 22 + 80);
-  const color: Record<string, string> = { vulnerable: "#D94C4C", "major-behind": "#D99A28", "minor-behind": "#6B7F96", current: "#23966A", unknown: "#C9C6BD" };
+  const color: Record<string, string> = { vulnerable: "#D94C4C", "major-behind": "#D99A28", "minor-behind": "#6B7F96", current: "#23966A", unknown: "var(--color-silver)" };
   return (
     <Panel pad={false} className="overflow-x-auto">
       <svg viewBox={`0 0 ${W} ${H}`} className="min-w-[760px]" role="img" aria-label="Dependency graph by manifest">
@@ -118,12 +120,12 @@ function DepGraph({ deps, onSelect, status }: { deps: any[]; onSelect: (d: any) 
                   <g key={d.id} className="cursor-pointer" onClick={() => onSelect(d)}>
                     <path d={`M${mx + 90} ${my} C ${mx + 200} ${my}, ${x - 120} ${y}, ${x - 8} ${y}`} fill="none" stroke={color[status(d)]} strokeOpacity={0.35} />
                     <circle cx={x} cy={y} r={5} fill={color[status(d)]} />
-                    <text x={x + 10} y={y + 4} fontSize={11} fill="#4A4A44" fontFamily="JetBrains Mono Variable, monospace">{d.name}{d.dev ? " (dev)" : ""}</text>
+                    <text x={x + 10} y={y + 4} fontSize={11} fill="var(--color-ink-2)" fontFamily="JetBrains Mono Variable, monospace">{d.name}{d.dev ? " (dev)" : ""}</text>
                   </g>
                 );
               })}
               <rect x={mx - 90} y={my - 16} width={180} height={32} rx={10} fill="white" stroke="#D99A28" />
-              <text x={mx} y={my + 4} textAnchor="middle" fontSize={11.5} fill="#242521">{m}</text>
+              <text x={mx} y={my + 4} textAnchor="middle" fontSize={11.5} fill="var(--color-ink)">{m}</text>
             </g>
           );
         })}

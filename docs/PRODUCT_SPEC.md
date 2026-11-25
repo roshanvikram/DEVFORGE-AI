@@ -44,6 +44,9 @@ Permissions are enforced in the API (`server/src/auth/rbac.ts`); the UI only hid
 | Test Forge & Regressions | Branch/edge-case extraction, AI test generation, sandboxed execution, regression comparison |
 | AI Agents | 10 specialised agents with tool access, run history, step logs, hand-offs |
 | Workflow Studio | Visual DAG editor with scans, agents, conditions, approvals, notifications |
+| RAG Copilot | Ask questions about the codebase. Chunked code + knowledge base, local hashed TF-IDF embeddings, hybrid retrieval (vector, BM25, symbols, import graph) fused with reciprocal-rank fusion; answers stream live from the configured AI provider and every citation is checked against the retrieved sources. Works as evidence-only search without an AI key |
+| Fix Optimizer | Picks the fixes that remove the most risk within a time budget. Binary optimisation with a shared-file discount, solved by simulated quantum annealing (quantum-inspired, classical hardware), streamed live and compared with a greedy baseline |
+| Advisory watch | Scheduled OSV.dev re-checks of unchanged dependencies; reports exactly which advisories appeared or cleared, with live alerts |
 | Quality Gates | Workspace release policy evaluated after every analysis; live notifications on failure/recovery |
 | Auto-Sync & Webhooks | Remote polling via `git ls-remote`; HMAC-verified GitHub push webhooks |
 | Live Ops | Measured queue, throughput, latency, event-loop lag, memory, DB size, live event stream, presence |

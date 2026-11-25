@@ -14,6 +14,7 @@ import { findingsRouter } from "./routes/findings.js";
 import { jobsRouter } from "./routes/jobs.js";
 import { platformRouter } from "./routes/platform.js";
 import { realtimeRouter, hooksRouter } from "./routes/realtime.js";
+import { intelligenceRouter } from "./routes/intelligence.js";
 import "./workflows/engine.js";
 import { rateLimit } from "./lib/ratelimit.js";
 
@@ -22,6 +23,9 @@ import "./services/analysis.js";
 import "./services/testforge.js";
 import "./services/investigations.js";
 import "./services/reviews.js";
+import "./services/rag.js";
+import "./services/quantum.js";
+import "./services/advisories.js";
 
 export function createApp() {
   const app = express();
@@ -56,6 +60,7 @@ export function createApp() {
   app.use("/api", jobsRouter);
   app.use("/api", platformRouter);
   app.use("/api", realtimeRouter);
+  app.use("/api", intelligenceRouter);
   app.use("/api", (_req, _res, next) => next(new HttpError(404, "API route not found", "not_found")));
 
   // Serve the built frontend in production.

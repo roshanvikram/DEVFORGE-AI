@@ -48,7 +48,7 @@ function FileNode({ data, selected }: any) {
     <div className={cx("rounded-xl border bg-white px-3 py-2 shadow-[0_1px_2px_rgba(36,37,33,.06)] transition", selected ? "border-amber ring-4 ring-amber-soft/70" : data.dim ? "border-line opacity-30" : data.hl ? "border-amber" : "border-line")} style={{ minWidth: data.module ? 150 : 120 }}>
       <Handle type="target" position={Position.Left} className="!size-1.5 !border-0 !bg-silver" />
       <div className="flex items-center gap-2">
-        {data.module ? <Boxes className="size-3.5 text-amber-deep" /> : <span className="size-2 rounded-full" style={{ background: data.worst ? SEV_COLOR[data.worst] : "#C9C6BD" }} />}
+        {data.module ? <Boxes className="size-3.5 text-amber-deep" /> : <span className="size-2 rounded-full" style={{ background: data.worst ? SEV_COLOR[data.worst] : "var(--color-silver)" }} />}
         <span className="max-w-[180px] truncate font-mono text-[11.5px] text-ink">{data.label}</span>
       </div>
       <div className="mt-1 flex gap-1.5 text-[10px] text-muted">
@@ -136,9 +136,9 @@ function Graph({ data, repoId }: { data: any; repoId: string }) {
         {pathNodes && <div className="absolute bottom-3 left-3 z-10"><Badge tone="amber" className="py-1">Path: {pathNodes.length} hops <button onClick={() => { setPathNodes(null); setPathFrom(null); }}><X className="size-3" /></button></Badge></div>}
         {nodes.length ? (
           <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView minZoom={0.1} maxZoom={2.5} onNodeClick={(_, n) => setSelected(n.id === selected ? null : n.id)} onPaneClick={() => setSelected(null)} nodesConnectable={false} proOptions={{ hideAttribution: true }}>
-            <Background color="#E7E3DA" gap={22} size={1.2} />
+            <Background color="var(--color-line)" gap={22} size={1.2} />
             <Controls showInteractive={false} position="bottom-right" />
-            <MiniMap pannable zoomable nodeColor={(n: any) => (n.data.worst ? SEV_COLOR[n.data.worst] : n.data.module ? "#D99A28" : "#C9C6BD")} maskColor="rgba(247,246,242,.7)" position="top-right" style={{ marginTop: 56 }} />
+            <MiniMap pannable zoomable nodeColor={(n: any) => (n.data.worst ? SEV_COLOR[n.data.worst] : n.data.module ? "#D99A28" : "var(--color-silver)")} maskColor="rgba(247,246,242,.7)" position="top-right" style={{ marginTop: 56 }} />
           </ReactFlow>
         ) : <EmptyState title="No nodes match the filters" />}
       </Panel>

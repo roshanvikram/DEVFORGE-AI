@@ -116,7 +116,7 @@ function RunDetail({ id }: { id: string }) {
       {t.analysis && <Panel title="Failure analysis"><Markdown>{t.analysis}</Markdown></Panel>}
       {(t.stdout || t.stderr) && (
         <Panel title="Runner output">
-          <pre className="scroll-thin max-h-80 overflow-auto rounded-lg bg-[#FCFBF8] p-3 font-mono text-[11.5px] text-ink-2 ring-1 ring-line">{(t.stdout ?? "").slice(-20000)}{t.stderr ? `\n--- stderr ---\n${t.stderr.slice(-10000)}` : ""}</pre>
+          <pre className="scroll-thin max-h-80 overflow-auto rounded-lg bg-[var(--color-code)] p-3 font-mono text-[11.5px] text-ink-2 ring-1 ring-line">{(t.stdout ?? "").slice(-20000)}{t.stderr ? `\n--- stderr ---\n${t.stderr.slice(-10000)}` : ""}</pre>
         </Panel>
       )}
     </div>
@@ -141,7 +141,7 @@ export function RegressionsPage() {
       <Panel title="Test outcomes over time" className="mb-4">
         {a.data?.tests?.length ? (
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={a.data.tests} margin={{ left: -20 }}><CartesianGrid stroke="#EFECE5" vertical={false} /><XAxis dataKey="day" tick={{ fontSize: 11, fill: "#A3A199" }} axisLine={false} tickLine={false} /><YAxis tick={{ fontSize: 11, fill: "#A3A199" }} axisLine={false} tickLine={false} allowDecimals={false} /><Tooltip contentStyle={{ borderRadius: 10, fontSize: 12 }} /><Bar dataKey="passed" stackId="a" fill="#23966A" /><Bar dataKey="failed" stackId="a" fill="#D94C4C" radius={[4, 4, 0, 0]} /></BarChart>
+            <BarChart data={a.data.tests} margin={{ left: -20 }}><CartesianGrid stroke="var(--color-line-2)" vertical={false} /><XAxis dataKey="day" tick={{ fontSize: 11, fill: "var(--color-faint)" }} axisLine={false} tickLine={false} /><YAxis tick={{ fontSize: 11, fill: "var(--color-faint)" }} axisLine={false} tickLine={false} allowDecimals={false} /><Tooltip contentStyle={{ borderRadius: 10, fontSize: 12 }} /><Bar dataKey="passed" stackId="a" fill="#23966A" /><Bar dataKey="failed" stackId="a" fill="#D94C4C" radius={[4, 4, 0, 0]} /></BarChart>
           </ResponsiveContainer>
         ) : <EmptyState title="No executed test runs yet" description="Run tests in Test Forge to build history." action={<Link to="/app/tests"><Button>Open Test Forge</Button></Link>} />}
       </Panel>

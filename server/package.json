@@ -5,10 +5,11 @@
   "scripts": {
     "dev": "tsx watch --clear-screen=false src/index.ts",
     "start": "node dist/index.js",
-    "build": "tsc -p tsconfig.build.json && cp -r src/db/migrations dist/db/",
+    "build": "tsc -p tsconfig.build.json && cp -r src/db/migrations dist/db/ && cp src/engine/py_analyzer.py dist/engine/",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "migrate": "tsx src/db/migrate-cli.ts"
+    "test": "vitest run --exclude test/live-claude.test.ts",
+    "migrate": "tsx src/db/migrate-cli.ts",
+    "test:live": "vitest run test/live-claude.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.14.0",

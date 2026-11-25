@@ -77,7 +77,7 @@ export function SiteLayout() {
 function Footer() {
   return (
     <footer className="mt-24 border-t border-line bg-white/40">
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-14 md:grid-cols-5">
+      <div className="mx-auto grid max-w-6xl [&>*]:min-w-0 gap-10 px-6 py-14 md:grid-cols-5">
         <div className="md:col-span-2">
           <Logo />
           <p className="mt-3 max-w-xs text-[13px] leading-relaxed text-muted">An autonomous engineering intelligence platform: repository analysis, security scanning, investigations, reviews, tests and agents — grounded in your code.</p>
@@ -126,7 +126,7 @@ export function Landing() {
   return (
     <>
       {/* 1. Hero */}
-      <section className="relative mx-auto grid max-w-6xl items-center gap-8 px-6 pb-10 pt-14 md:grid-cols-[1.05fr_1fr] md:pt-20">
+      <section className="relative mx-auto grid max-w-6xl [&>*]:min-w-0 items-center gap-8 px-6 pb-10 pt-14 md:grid-cols-[1.05fr_1fr] md:pt-20">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="relative z-10">
           <Badge tone="amber" className="mb-6"><Sparkles className="size-3" /> Autonomous software engineering intelligence</Badge>
           <h1 className="text-[44px] font-semibold leading-[1.02] tracking-[-0.04em] text-ink md:text-[62px]">
@@ -282,7 +282,7 @@ export function Landing() {
 
 function SplitSection({ eyebrow, title, points, visual, reverse }: { eyebrow: string; title: string; points: string[]; visual: ReactNode; reverse?: boolean }) {
   return (
-    <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 md:grid-cols-2">
+    <section className="mx-auto grid max-w-6xl [&>*]:min-w-0 items-center gap-12 px-6 py-16 md:grid-cols-2">
       <motion.div {...fade} className={cx(reverse && "md:order-2")}>
         <div className="mb-3 text-[11.5px] font-semibold uppercase tracking-[0.16em] text-amber-deep">{eyebrow}</div>
         <h2 className="text-[32px] font-semibold leading-[1.12] tracking-[-0.03em] text-ink">{title}</h2>
@@ -374,7 +374,7 @@ export function FeaturesPage() {
   return (
     <>
       <PageHero eyebrow="Platform" title="Everything an engineering team needs to understand, secure and improve software." description="Each module runs on real analysis of your repository. Where a capability depends on credentials or an optional tool, DevForge tells you exactly what's missing." />
-      <section className="mx-auto grid max-w-6xl gap-4 px-6 py-12 md:grid-cols-2">
+      <section className="mx-auto grid max-w-6xl [&>*]:min-w-0 gap-4 px-6 py-12 md:grid-cols-2">
         {groups.map(([t, i, items]) => (
           <motion.div {...fade} key={t} className="panel p-6">
             <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-xl bg-amber-soft/60 text-amber-deep">{i}</span><h3 className="text-[16px] font-semibold text-ink">{t}</h3></div>
@@ -402,7 +402,7 @@ export function AgentsPage() {
   return (
     <>
       <PageHero eyebrow="AI agents" title="A virtual engineering team with real tools." description="Agents call DevForge's analysis tools — search, symbol lookup, call graph, scanners, Test Forge — within explicit permissions and limits. Without an AI provider they still execute a deterministic playbook and report exact tool output." />
-      <section className="mx-auto grid max-w-6xl gap-4 px-6 py-12 md:grid-cols-2">
+      <section className="mx-auto grid max-w-6xl [&>*]:min-w-0 gap-4 px-6 py-12 md:grid-cols-2">
         {AGENT_LIST.map(([n, I]) => (
           <motion.div {...fade} key={n} className="panel flex gap-4 p-5">
             <div className="grid size-11 shrink-0 place-items-center rounded-full bg-[radial-gradient(circle_at_32%_28%,#fff,#ebe8e0_55%,#cfcabf)] ring-1 ring-line"><I className="size-5 text-ink-2" /></div>

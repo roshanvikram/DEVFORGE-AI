@@ -10,25 +10,7 @@ import { PageHeader, Panel, Stat, Badge, EmptyState, ErrorState, LoadingBlock, T
 import { JobPanel } from "../../components/jobs";
 import { duration, num, timeAgo, titleCase } from "../../lib/format";
 
-type Ev = { type: string; at: string; [k: string]: any };
-const TONE: Record<string, "amber" | "success" | "danger" | "info" | "neutral" | "dark"> = { job: "info", scan: "amber", health: "success", gate: "dark", watch: "info", webhook: "info", notification: "amber", activity: "neutral", presence: "neutral" };
-
-function describe(e: Ev): string {
-  switch (e.type) {
-    case "job": return `${e.jobType ?? "job"} ${e.status}${e.progress != null && e.status === "running" ? ` · ${Math.round(e.progress * 100)}%` : ""}${e.message ? ` — ${e.message}` : ""}`;
-    case "job.log": return e.message;
-    case "scan": return `${e.kind} scan ${e.status}`;
-    case "health": return `Health score ${e.score}${e.delta != null ? ` (${e.delta >= 0 ? "+" : ""}${e.delta})` : ""}`;
-    case "gate": return e.passed ? "Quality gate passed" : `Quality gate failed: ${(e.failed ?? []).join(", ")}`;
-    case "watch": return `Remote check: ${e.status}${e.remoteSha ? ` @ ${String(e.remoteSha).slice(0, 8)}` : ""}${e.error ? ` — ${e.error}` : ""}`;
-    case "webhook": return `Webhook ${e.event || ""} ${e.status}`;
-    case "repository": return `Repository ${e.status ?? "updated"}`;
-    case "presence": return `${(e.users ?? []).length} online`;
-    case "notification": return e.title;
-    case "activity": return titleCase(String(e.action ?? "").replace(/\./g, " "));
-    default: return titleCase(e.type);
-  }
-}
+import { describeEvent as describe, EVENT_TONE as TONE, type Ev } from "../../lib/events";
 
 export default function LivePage() {
   const { workspace } = useAuth();
@@ -52,7 +34,7 @@ export default function LivePage() {
         description="Real-time view of this workspace: job queue, analysis throughput, server health and every event as it happens. All values are measured, refreshed every 3 seconds." />
       {q.error ? <ErrorState error={q.error} retry={() => q.refetch()} /> : !d ? <LoadingBlock /> : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-7">
             <Stat label="Online now" value={presence.length} icon={<Users className="size-4" />} sub={`${d.realtime.connections} live connection${d.realtime.connections === 1 ? "" : "s"}`} tone="success" />
             <Stat label="Events / min" value={num(d.realtime.eventsPerMinute)} icon={<Zap className="size-4" />} sub={`${num(d.realtime.eventsPublished)} since start`} tone="amber" />
             <Stat label="Workers busy" value={`${d.worker.running}/${d.worker.concurrency}`} icon={<Cpu className="size-4" />} sub={`${byStatus.queued ?? 0} queued`} tone={d.worker.running ? "info" : undefined} />

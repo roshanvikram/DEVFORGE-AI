@@ -120,6 +120,17 @@ function parseResults(fw: Framework, reportFile: string, stdout: string, stderr:
   } catch { /* fall through to text parsing */ }
   if (!res.parsed) {
     const text = stdout + "\n" + stderr;
+    // TAP summary (node --test, tap, ava): "# pass 3" / "# fail 1" / "# skipped 0"
+    const tp = text.match(/^# pass (\d+)/m);
+    const tf = text.match(/^# fail (\d+)/m);
+    if (tp || tf) {
+      res.passed = Number(tp?.[1] ?? 0);
+      res.failed = Number(tf?.[1] ?? 0);
+      res.skipped = Number(text.match(/^# skip(?:ped)? (\d+)/m)?.[1] ?? 0) + Number(text.match(/^# todo (\d+)/m)?.[1] ?? 0);
+      for (const m of text.matchAll(/^not ok \d+ - (.+)$/gm)) res.failures.push({ name: m[1].trim(), message: "" });
+      res.parsed = true;
+      return res;
+    }
     const p = text.match(/(\d+)\s+(passed|passing)/i);
     const f = text.match(/(\d+)\s+(failed|failing)/i);
     const s = text.match(/(\d+)\s+(skipped|pending)/i);

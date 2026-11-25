@@ -199,7 +199,7 @@ function WsSettings({ tab }: { tab: "ai" | "notifications" | "retention" | "usag
       <>
         <div className="mb-4 grid gap-3 md:grid-cols-4"><Stat label="AI spend this month" value={usd(ai.monthSpendUsd)} sub={`budget ${ai.budgetUsd ? usd(ai.budgetUsd) : "unlimited"}`} /><Stat label="AI requests" value={num(ai.monthRequests)} /><Stat label="Input tokens" value={num(ai.monthInputTokens)} /><Stat label="Output tokens" value={num(ai.monthOutputTokens)} /></div>
         <Panel title="Billing">
-          <p className="text-[13px] leading-relaxed text-muted">AI usage is billed by Anthropic directly to the API key you connect; DevForge records provider-reported token usage and estimates cost from published per-model prices. Self-hosted DevForge has no platform fee. A subscription billing provider can be plugged in at the workspace level (see docs/ARCHITECTURE.md).</p>
+          <p className="text-[13px] leading-relaxed text-muted">AI usage is billed by Anthropic directly to the API key you connect; DevForge records provider-reported token usage and estimates cost from published per-model prices. Self-hosted DevForge has no platform fee.</p>
           {an.data?.ai?.length > 0 && <div className="mt-4"><Table head={["Feature (30d)", "Requests", "Cost"]}>{an.data.ai.map((r: any) => <tr key={r.feature}><td className="px-4 py-2 font-mono text-[12px]">{r.feature}</td><td className="px-4 py-2">{r.n}</td><td className="px-4 py-2">{usd(r.cost)}</td></tr>)}</Table></div>}
         </Panel>
       </>

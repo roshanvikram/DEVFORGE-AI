@@ -7,6 +7,8 @@ import remarkGfm from "remark-gfm";
 import { Highlight, themes } from "prism-react-renderer";
 import { AlertTriangle, Inbox, Loader2, X, RefreshCw, Sparkles, ShieldCheck } from "lucide-react";
 import { SEV_COLOR } from "../lib/format";
+import { gradeFor } from "../lib/grade";
+export { gradeFor };
 import { ApiError } from "../lib/api";
 
 export const cx = clsx;
@@ -198,9 +200,10 @@ export function Notice({ tone = "info", children, icon }: { tone?: "info" | "amb
 // ---------------------------------------------------------------- Tabs
 export function Tabs<T extends string>({ tabs, value, onChange, className }: { tabs: { id: T; label: ReactNode; count?: number }[]; value: T; onChange: (v: T) => void; className?: string }) {
   return (
-    <div className={cx("inline-flex items-center gap-1 rounded-xl bg-ivory p-1 ring-1 ring-line", className)} role="tablist">
+    // Scrolls horizontally on narrow screens instead of widening the page.
+    <div className={cx("scroll-thin inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-ivory p-1 ring-1 ring-line", className)} role="tablist">
       {tabs.map((t) => (
-        <button key={t.id} role="tab" aria-selected={value === t.id} onClick={() => onChange(t.id)} className={cx("relative rounded-[9px] px-3 py-1.5 text-[13px] font-medium transition", value === t.id ? "text-ink" : "text-muted hover:text-ink-2")}>
+        <button key={t.id} role="tab" aria-selected={value === t.id} onClick={() => onChange(t.id)} className={cx("relative shrink-0 whitespace-nowrap rounded-[9px] px-3 py-1.5 text-[13px] font-medium transition", value === t.id ? "text-ink" : "text-muted hover:text-ink-2")}>
           {value === t.id && <motion.span layoutId={`tab-${tabs.map((x) => x.id).join("")}`} className="absolute inset-0 rounded-[9px] bg-white shadow-[0_1px_3px_rgba(36,37,33,.1)]" transition={{ type: "spring", duration: 0.35, bounce: 0.15 }} />}
           <span className="relative flex items-center gap-1.5">{t.label}{t.count != null && <span className="text-[11px] text-faint tabular-nums">{t.count}</span>}</span>
         </button>
@@ -284,14 +287,6 @@ export function ProgressBar({ value, className }: { value: number; className?: s
       <motion.div className="h-full rounded-full bg-gradient-to-r from-amber to-[#e8b55a]" initial={{ width: 0 }} animate={{ width: `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%` }} transition={{ duration: 0.4 }} />
     </div>
   );
-}
-export function gradeFor(score: number | null) {
-  if (score == null) return { grade: "—", label: "Not analysed", color: "#C9C6BD", tone: "neutral" as const };
-  if (score >= 90) return { grade: "A", label: "Excellent", color: "#23966A", tone: "success" as const };
-  if (score >= 80) return { grade: "B", label: "Good", color: "#5FA36B", tone: "success" as const };
-  if (score >= 65) return { grade: "C", label: "Fair", color: "#D99A28", tone: "amber" as const };
-  if (score >= 45) return { grade: "D", label: "At risk", color: "#E07A3A", tone: "danger" as const };
-  return { grade: "F", label: "Critical", color: "#D94C4C", tone: "danger" as const };
 }
 /** Animated integer count-up (respects reduced motion). */
 export function useCountUp(target: number | null, ms = 900) {

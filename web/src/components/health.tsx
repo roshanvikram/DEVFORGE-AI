@@ -5,14 +5,10 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis } from "recharts";
 import { ArrowDownRight, ArrowUpRight, Minus, BadgeCheck, ShieldAlert } from "lucide-react";
 import { get } from "../lib/api";
 import { fmtDate } from "../lib/format";
-import { HealthRing, gradeFor, Panel, Skeleton, cx } from "./ui";
+import { HealthRing, Panel, Skeleton, cx } from "./ui";
+import { gradeFor, DIMENSIONS } from "../lib/grade";
 
-const DIMENSIONS: { key: string; label: string; weight: number; hint: string }[] = [
-  { key: "security", label: "Security", weight: 35, hint: "security, secret & dependency findings" },
-  { key: "reliability", label: "Reliability", weight: 30, hint: "bug findings" },
-  { key: "maintainability", label: "Maintainability", weight: 25, hint: "technical-debt findings" },
-  { key: "performance", label: "Performance", weight: 10, hint: "performance findings" },
-];
+
 
 export function DeltaChip({ delta, className }: { delta: number | null | undefined; className?: string }) {
   if (delta == null) return null;

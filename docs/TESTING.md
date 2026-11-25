@@ -1,37 +1,44 @@
 # Testing
 
-## Automated suite
+## Automated suites
 
 ```bash
-npm test --workspace server
+npm test                                  # server + web
+npm run test:live --workspace server      # optional: real Claude API (needs ANTHROPIC_API_KEY)
 ```
 
-`server/test/platform.test.ts` runs against the real stack. Nothing is mocked:
+**Latest run: server 54 / 54 passed, web 13 / 13 passed.** Both packages also pass `npm run typecheck`, and both build for production.
 
-- the Express app is exercised over HTTP with supertest;
-- a throwaway SQLite database lives in `data/test-<pid>` and is deleted afterwards;
-- the job queue and full analysis pipeline run on repositories generated into the OS temp directory (the only allowed `LOCAL_IMPORT_ROOTS` during tests);
-- presence is tested over a live WebSocket server.
+### Server — `server/test/`
 
-The secret values in the fixtures are built at runtime, so the source never contains a literal credential pattern.
+All server tests use the real stack. Nothing inside DevForge is mocked:
 
-**Latest run: 39 / 39 passed** (about 3 s). The run used `OSV_ENABLED=false` and `SANDBOX_MODE=disabled`, so it needs no network and executes no repository code.
+- Express runs over HTTP with supertest.
+- Each run gets a throwaway SQLite database in `data/test-<pid>`.
+- The real job queue analyses repositories generated in the OS temp directory.
+- The WebSocket server is real.
 
-| Area | Tests | What is proven |
+Secret-like values in the fixtures are built at runtime, so the source never contains a literal credential pattern.
+
+| File | Tests | What is proven |
 | --- | --- | --- |
-| Auth | 7 | CSRF header and origin checks, password policy, duplicate signup, login success/failure, hashed session storage, auth required |
-| Tenancy & RBAC | 2 | Another workspace's repository is not reachable even with a forged `X-Workspace-Id`; role permissions enforced server-side |
-| Ingestion safety | 3 | Private/loopback IP detection (SSRF), git URL validation, local import root restriction |
-| Analysis engine | 7 | Full analysis job, SQL injection / eval / unsafe deserialization detection, secret detection with masking, zero security findings on a clean repo, FTS search, path traversal blocked, architecture graph |
-| Findings | 2 | Status update with audit event, invalid status rejected |
-| Health history (new) | 2 | A history point is recorded per analysis; delta on re-scan |
-| Quality gates (new) | 4 | Failing and passing evaluations, failure notification, threshold validation |
-| Auto-sync & webhooks (new) | 4 | Local repos cannot be watched, constant-time HMAC verification, signed vs forged deliveries, secret stored encrypted and never returned, 404 for unconfigured hooks |
-| Presence & Live Ops (new) | 3 | Presence broadcast over WebSocket, unauthenticated sockets rejected, measured ops metrics |
-| Secrets | 3 | AES-GCM round trip and tamper detection, log redaction, integrations API never returns keys |
-| Dashboard | 2 | Counts match the findings table; empty state for a new workspace |
+| `platform.test.ts` | 39 | Auth (CSRF, origin, password policy, login success and failure, hashed sessions); tenancy (forged `X-Workspace-Id` rejected) and RBAC; SSRF guards and local-import roots; real detection of SQL injection, eval, unsafe deserialization and secrets (masked); a clean repo has no security findings; search, path traversal, architecture graph; findings triage; health history; quality gates (fail, pass, notify, validation); auto-sync refusal for local repos; HMAC webhooks (signed, forged, ignored branch, encrypted secret, 404); presence over WebSocket; unauthenticated sockets rejected; Live Ops metrics; AES-GCM and log redaction; dashboard counts match the database |
+| `sandbox.test.ts` | 7 | macOS `sandbox-exec` mode. The repo's own tests run and parse (pass and fail counted). Network is blocked, writes outside the workdir are blocked, reads of DevForge's data directory are blocked, and server env vars do not leak. A full `npm test` suite runs through the API and records 2 passed / 1 failed |
+| `ai.test.ts` | 8 | DevForge's real provider code (Anthropic SDK, streaming, tool loop, structured output) runs against a local Messages-API stand-in. Covers: the no-key fallback, a rejected key not stored, a valid key stored encrypted and never echoed, Q&A with bounded context, citations and usage/cost accounting, and an agent tool loop calling a real tool and reporting its real output, with only that agent's tools sent. Also: AI hypotheses labelled, an invented file flagged, the patch never applied, a revoked key mapped to `ai_auth` without leaking, and the monthly budget enforced before any provider call |
+| `live-claude.test.ts` | 1 (skipped without a key) | A structured-output request against the real Claude API through DevForge's provider |
 
-Both packages also pass type checking (`npm run typecheck`), and `web` builds for production (`npm run build --workspace web`).
+### Web — `web/src/__tests__/`
+
+| File | Tests | What is proven |
+| --- | --- | --- |
+| `format.test.ts` | 4 | Relative times, durations, money and percentages; missing values render "—" |
+| `grade.test.ts` | 2 | Grade thresholds; the UI's dimension weights match the server's health-score formula (read from `metrics.ts`) |
+| `events.test.ts` | 4 | Live Ops event descriptions |
+| `api.test.ts` | 3 | CSRF and workspace headers on every request; structured errors; an unreachable server reported as status 0, so the UI retries instead of logging out |
+
+### Layout
+
+All 27 app routes and 7 public routes were checked at 375 px for horizontal overflow; all fit. This pass found and fixed overflowing tab strips and a landing-page code sample.
 
 ## Recorded walkthrough
 
@@ -48,8 +55,8 @@ Both packages also pass type checking (`npm run typecheck`), and `web` builds fo
 
 The machine did not allow screen recording (macOS permission), so the video is a sequence of captioned screenshots, not a continuous capture.
 
-## Not covered yet
+## Limits
 
-- AI-dependent paths (agent tool loops, AI review, test generation, Q&A). They need a Claude API key and have not been run against the live API.
-- Running a repository's own tests inside the sandbox (`sandbox-exec` / Docker). This is disabled in the automated suite.
-- Frontend component tests. The UI is verified manually, as in the walkthrough.
+- The live Claude test needs a real key. Model answer quality is outside what these tests can prove.
+- The Docker sandbox is implemented but was verified only through macOS `sandbox-exec` on this machine.
+- The UI end-to-end pass is manual, recorded in the walkthrough. A Playwright suite is the next step (see IMPLEMENTATION_PLAN).

@@ -7,3 +7,7 @@ data/
 *.db-*
 .DS_Store
 coverage
+
+# Stray shell-redirect output from pasted terminal text
+test:live
+.DS_Store

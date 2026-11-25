@@ -7,8 +7,9 @@ import { config } from "../config.js";
 import { redact } from "../lib/logger.js";
 
 /**
- * AI provider abstraction. Claude is the primary (and currently only) provider; other providers can
- * implement `AIProvider` and be returned from `providerFor()` without changes to callers.
+ * AI provider abstraction. Callers speak one message/tool format (Anthropic-shaped content blocks);
+ * each provider translates it. Providers: Anthropic Claude (SDK, streaming) and Groq (OpenAI-compatible
+ * chat completions). The workspace chooses one, or "auto" (Claude if configured, else Groq).
  */
 export type AIMessage = Anthropic.Beta.Messages.BetaMessageParam;
 export type AITool = Anthropic.Beta.Messages.BetaTool;
@@ -33,7 +34,7 @@ export interface AIResponse {
   model: string;
 }
 export interface AIProvider {
-  id: string;
+  id: "anthropic" | "groq";
   model: string;
   complete(req: AIRequest): Promise<AIResponse>;
 }
@@ -46,30 +47,72 @@ const PRICES: Record<string, [number, number]> = {
   "claude-opus-4-8": [5, 25],
 };
 export const SUPPORTED_MODELS = Object.keys(PRICES);
+/** Groq production models usable for chat + tool calling. Cost is only tracked when GROQ_PRICES is set. */
+export const GROQ_MODELS = ["llama-3.3-70b-versatile", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "llama-3.1-8b-instant"];
+export type ProviderChoice = "auto" | "anthropic" | "groq";
 
 export class AINotConfiguredError extends HttpError {
   constructor() {
-    super(503, "No AI provider is configured. Add an Anthropic API key in Settings → AI Providers (or set ANTHROPIC_API_KEY on the server).", "ai_not_configured");
+    super(503, "No AI provider is configured. Connect Anthropic (Claude) or Groq in Integrations (or set ANTHROPIC_API_KEY / GROQ_API_KEY on the server).", "ai_not_configured");
   }
 }
 
-function apiKeyFor(workspaceId: string): { key: string; source: "workspace" | "environment" } | null {
-  const ws = getSecret(workspaceId, "anthropic");
+function apiKeyFor(workspaceId: string, provider: "anthropic" | "groq" = "anthropic"): { key: string; source: "workspace" | "environment" } | null {
+  const ws = getSecret(workspaceId, provider);
   if (ws) return { key: ws, source: "workspace" };
-  if (process.env.ANTHROPIC_API_KEY) return { key: process.env.ANTHROPIC_API_KEY, source: "environment" };
+  const env = provider === "anthropic" ? process.env.ANTHROPIC_API_KEY : process.env.GROQ_API_KEY;
+  if (env) return { key: env, source: "environment" };
+  return null;
+}
+
+/** Resolves which provider a workspace uses right now, honouring its choice and available keys. */
+function resolveProvider(workspaceId: string): { id: "anthropic" | "groq"; key: string; source: "workspace" | "environment" } | null {
+  const choice = (getSettings(workspaceId).ai as any).provider as ProviderChoice | undefined;
+  const order: ("anthropic" | "groq")[] = choice === "groq" ? ["groq"] : choice === "anthropic" ? ["anthropic"] : ["anthropic", "groq"];
+  for (const id of order) {
+    const k = apiKeyFor(workspaceId, id);
+    if (k) return { id, ...k };
+  }
+  return null;
+}
+
+function groqModel(workspaceId: string) {
+  const m = (getSettings(workspaceId).ai as any).groqModel as string | undefined;
+  return m && GROQ_MODELS.includes(m) ? m : GROQ_MODELS[0];
+}
+
+/** Optional Groq pricing (USD per million tokens), e.g. GROQ_PRICES="llama-3.3-70b-versatile=0.59/0.79;openai/gpt-oss-20b=0.1/0.5". */
+function groqPrice(model: string): [number, number] | null {
+  for (const part of (process.env.GROQ_PRICES ?? "").split(";")) {
+    const [m, v] = part.split("=");
+    if (m?.trim() === model && v) {
+      const [i, o] = v.split("/").map(Number);
+      if (Number.isFinite(i) && Number.isFinite(o)) return [i, o];
+    }
+  }
   return null;
 }
 
 export function aiStatus(workspaceId: string) {
-  const k = apiKeyFor(workspaceId);
+  const p = resolveProvider(workspaceId);
   const s = getSettings(workspaceId);
   const month = new Date().toISOString().slice(0, 7);
   const spend = db().prepare(`SELECT COALESCE(SUM(cost_usd),0) AS c, COALESCE(SUM(input_tokens),0) AS i, COALESCE(SUM(output_tokens),0) AS o, COUNT(*) AS n FROM ai_usage WHERE workspace_id = ? AND substr(created_at,1,7) = ?`).get(workspaceId, month) as any;
-  return { configured: !!k, source: k?.source ?? null, provider: "anthropic", model: s.ai.model, effort: s.ai.effort, monthSpendUsd: spend.c, monthInputTokens: spend.i, monthOutputTokens: spend.o, monthRequests: spend.n, budgetUsd: s.ai.monthlyBudgetUsd };
+  const model = p?.id === "groq" ? groqModel(workspaceId) : s.ai.model;
+  return {
+    configured: !!p, source: p?.source ?? null, provider: p?.id ?? null, choice: ((s.ai as any).provider ?? "auto") as ProviderChoice, model, effort: s.ai.effort,
+    costTracked: p?.id !== "groq" || !!groqPrice(model),
+    available: { anthropic: !!apiKeyFor(workspaceId, "anthropic"), groq: !!apiKeyFor(workspaceId, "groq") },
+    monthSpendUsd: spend.c, monthInputTokens: spend.i, monthOutputTokens: spend.o, monthRequests: spend.n, budgetUsd: s.ai.monthlyBudgetUsd,
+  };
+}
+
+function recordUsage(workspaceId: string, userId: string | null, feature: string, model: string, input: number, output: number, cost: number, ok: boolean, error: string | null, ms: number) {
+  db().prepare(`INSERT INTO ai_usage (workspace_id, user_id, feature, model, input_tokens, output_tokens, cost_usd, ok, error, duration_ms) VALUES (?,?,?,?,?,?,?,?,?,?)`).run(workspaceId, userId, feature, model, input, output, cost, ok ? 1 : 0, error, ms);
 }
 
 class ClaudeProvider implements AIProvider {
-  id = "anthropic";
+  id = "anthropic" as const;
   private client: Anthropic;
   constructor(apiKey: string, public model: string, private effort: string, private workspaceId: string, private userId: string | null) {
     this.client = new Anthropic({
@@ -124,16 +167,107 @@ class ClaudeProvider implements AIProvider {
   }
 
   private record(feature: string, model: string, input: number, output: number, cost: number, ok: boolean, error: string | null, ms: number) {
-    db().prepare(`INSERT INTO ai_usage (workspace_id, user_id, feature, model, input_tokens, output_tokens, cost_usd, ok, error, duration_ms) VALUES (?,?,?,?,?,?,?,?,?,?)`).run(this.workspaceId, this.userId, feature, model, input, output, cost, ok ? 1 : 0, error, ms);
+    recordUsage(this.workspaceId, this.userId, feature, model, input, output, cost, ok, error, ms);
   }
 }
 
-/** Returns the configured provider for a workspace, or null when no credentials are available. */
+type OAMessage = { role: "system" | "user" | "assistant" | "tool"; content: string | null; tool_calls?: any[]; tool_call_id?: string };
+
+/** Groq via its OpenAI-compatible Chat Completions API. Translates DevForge's Anthropic-shaped messages/tools. */
+class GroqProvider implements AIProvider {
+  id = "groq" as const;
+  constructor(private apiKey: string, public model: string, private workspaceId: string, private userId: string | null) {}
+
+  private toMessages(system: string, messages: AIMessage[]): OAMessage[] {
+    const out: OAMessage[] = [{ role: "system", content: system }];
+    for (const m of messages) {
+      if (typeof m.content === "string") {
+        out.push({ role: m.role, content: m.content });
+        continue;
+      }
+      const blocks = m.content as any[];
+      if (m.role === "assistant") {
+        const text = blocks.filter((b) => b.type === "text").map((b) => b.text).join("");
+        const calls = blocks.filter((b) => b.type === "tool_use").map((b) => ({ id: b.id, type: "function", function: { name: b.name, arguments: JSON.stringify(b.input ?? {}) } }));
+        out.push({ role: "assistant", content: text || null, ...(calls.length ? { tool_calls: calls } : {}) });
+      } else {
+        for (const b of blocks) {
+          if (b.type === "tool_result") out.push({ role: "tool", tool_call_id: b.tool_use_id, content: typeof b.content === "string" ? b.content : JSON.stringify(b.content) });
+        }
+        const text = blocks.filter((b) => b.type === "text").map((b) => b.text).join("");
+        if (text) out.push({ role: "user", content: text });
+      }
+    }
+    return out;
+  }
+
+  async complete(req: AIRequest): Promise<AIResponse> {
+    const started = Date.now();
+    let system = req.system;
+    if (req.jsonSchema) system += `\n\nRespond with a single JSON object (no prose, no code fences) that validates against this JSON Schema:\n${JSON.stringify(req.jsonSchema)}`;
+    const body: any = { model: this.model, messages: this.toMessages(system, req.messages), max_completion_tokens: Math.min(req.maxTokens ?? 8000, 8000), temperature: 0.2 };
+    if (req.tools?.length) {
+      body.tools = req.tools.map((t: any) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.input_schema } }));
+      body.tool_choice = "auto";
+    }
+    if (req.jsonSchema && !req.tools?.length) body.response_format = { type: "json_object" };
+    const timeout = AbortSignal.timeout(config.ai.timeoutMs);
+    const signal = req.signal ? AbortSignal.any([req.signal, timeout]) : timeout;
+    let res: Response;
+    try {
+      res = await fetch(`${process.env.DEVFORGE_GROQ_BASE_URL ?? "https://api.groq.com"}/openai/v1/chat/completions`, {
+        method: "POST", signal,
+        headers: { Authorization: `Bearer ${this.apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    } catch (e: any) {
+      this.record(req.feature, 0, 0, 0, false, redact(String(e?.message ?? e)).slice(0, 300), Date.now() - started);
+      if (req.signal?.aborted) throw new Error("cancelled");
+      if (timeout.aborted) throw new HttpError(504, "The AI request timed out.", "ai_timeout");
+      throw new HttpError(502, "Could not reach Groq.", "ai_unreachable");
+    }
+    const data: any = await res.json().catch(() => null);
+    if (!res.ok) {
+      const message = redact(String(data?.error?.message ?? res.statusText)).slice(0, 300);
+      this.record(req.feature, 0, 0, 0, false, `${res.status}: ${message}`, Date.now() - started);
+      if (res.status === 401) throw new HttpError(502, "The configured Groq API key was rejected. Update it in Integrations → Groq.", "ai_auth");
+      if (res.status === 403) throw new HttpError(502, "The Groq API key does not have permission for this request.", "ai_permission");
+      if (res.status === 429) throw new HttpError(429, "Groq is rate-limiting requests (or the account's quota is used up). Try again shortly.", "ai_rate_limited");
+      if (res.status === 413) throw new HttpError(502, "The request was too large for the selected Groq model. Pick a model with a larger context window or reduce context files.", "ai_too_large");
+      throw new HttpError(502, `Groq request failed (${res.status}): ${message}`, "ai_error");
+    }
+    const choice = data?.choices?.[0];
+    const msg = choice?.message ?? {};
+    const content: any[] = [];
+    if (msg.content) content.push({ type: "text", text: msg.content, citations: null });
+    for (const c of msg.tool_calls ?? []) {
+      let input: unknown = {};
+      try { input = JSON.parse(c.function?.arguments || "{}"); } catch { input = {}; }
+      content.push({ type: "tool_use", id: c.id, name: c.function?.name, input });
+    }
+    const input = data?.usage?.prompt_tokens ?? 0;
+    const output = data?.usage?.completion_tokens ?? 0;
+    const price = groqPrice(this.model);
+    const cost = price ? (input * price[0] + output * price[1]) / 1_000_000 : 0;
+    this.record(req.feature, input, output, cost, true, null, Date.now() - started);
+    const text = msg.content ?? "";
+    if (text && req.onText) req.onText(text);
+    const stop = choice?.finish_reason === "tool_calls" ? "tool_use" : choice?.finish_reason === "length" ? "max_tokens" : "end_turn";
+    return { content: content as AIContentBlock[], text, stopReason: stop, usage: { input, output, costUsd: cost }, model: data?.model ?? this.model };
+  }
+
+  private record(feature: string, input: number, output: number, cost: number, ok: boolean, error: string | null, ms: number) {
+    recordUsage(this.workspaceId, this.userId, feature, `groq:${this.model}`, input, output, cost, ok, error, ms);
+  }
+}
+
+/** Returns the workspace's active provider, or null when no credentials are available. */
 export function providerFor(workspaceId: string, userId: string | null): AIProvider | null {
-  const k = apiKeyFor(workspaceId);
-  if (!k) return null;
+  const p = resolveProvider(workspaceId);
+  if (!p) return null;
   const s = getSettings(workspaceId);
-  return new ClaudeProvider(k.key, SUPPORTED_MODELS.includes(s.ai.model) ? s.ai.model : config.ai.model, s.ai.effort, workspaceId, userId);
+  if (p.id === "groq") return new GroqProvider(p.key, groqModel(workspaceId), workspaceId, userId);
+  return new ClaudeProvider(p.key, SUPPORTED_MODELS.includes(s.ai.model) ? s.ai.model : config.ai.model, s.ai.effort, workspaceId, userId);
 }
 
 /** Provider + guardrails (rate limit, monthly budget). Throws AINotConfiguredError when unavailable. */

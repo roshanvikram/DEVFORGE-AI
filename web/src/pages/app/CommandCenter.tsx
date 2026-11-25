@@ -61,7 +61,7 @@ export default function CommandCenter() {
         )} />
 
       {jobs.length > 0 && <div className="mb-6 space-y-2">{jobs.slice(0, 2).map((j: any) => <JobPanel key={j.id} jobId={j.id} compact />)}</div>}
-      {caps.data && !caps.data.ai.configured && <div className="mb-6"><Notice tone="info" icon={<Sparkles className="size-4 text-info" />}>Static analysis is fully active. AI hypotheses, AI review, test generation and Q&A need a Claude API key — <Link className="font-medium text-amber-deep underline" to="/app/integrations">connect one</Link>.</Notice></div>}
+      {caps.data && !caps.data.ai.configured && <div className="mb-6"><Notice tone="info" icon={<Sparkles className="size-4 text-info" />}>Static analysis is fully active. AI hypotheses, AI review, test generation and Q&A need an AI provider key (Claude or Groq) — <Link className="font-medium text-amber-deep underline" to="/app/integrations">connect one</Link>.</Notice></div>}
 
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         {repo ? <HealthPanel repoId={repo.id} /> : <Panel><HealthRing score={null} size={150} /></Panel>}

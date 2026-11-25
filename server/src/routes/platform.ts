@@ -10,7 +10,7 @@ import { audit } from "../lib/audit.js";
 import { enqueue, cancelJob } from "../jobs/queue.js";
 import { getRepo, repoDir } from "../services/analysis.js";
 import { retrieveContext, formatContext, searchCode } from "../services/search.js";
-import { providerFor, requireProvider, aiStatus, SUPPORTED_MODELS } from "../ai/provider.js";
+import { providerFor, requireProvider, aiStatus, SUPPORTED_MODELS, GROQ_MODELS } from "../ai/provider.js";
 import { listIntegrations, setIntegration, removeIntegration, getSettings, updateSettings, INTEGRATION_PROVIDERS, type Provider } from "../services/integrations.js";
 import { gh, parseGithubSlug, githubConfigured } from "../services/github.js";
 import { AGENTS, agentByKey } from "../agents/definitions.js";
@@ -486,11 +486,11 @@ platformRouter.get("/search", (req, res) => {
 
 // ======================= Settings & integrations =======================
 platformRouter.get("/settings", (req, res) => {
-  res.json({ settings: getSettings(req.workspaceId!), ai: aiStatus(req.workspaceId!), models: SUPPORTED_MODELS });
+  res.json({ settings: getSettings(req.workspaceId!), ai: aiStatus(req.workspaceId!), models: SUPPORTED_MODELS, groqModels: GROQ_MODELS });
 });
 platformRouter.patch("/settings", requirePerm("settings.manage"), (req, res) => {
   const b = parse(z.object({
-    ai: z.object({ model: z.enum(SUPPORTED_MODELS as [string, ...string[]]).optional(), effort: z.enum(["low", "medium", "high", "xhigh", "max"]).optional(), maxContextFiles: z.number().int().min(1).max(40).optional(), monthlyBudgetUsd: z.number().min(0).max(100000).optional(), allowCodeSnippetsToAI: z.boolean().optional() }).optional(),
+    ai: z.object({ provider: z.enum(["auto", "anthropic", "groq"]).optional(), groqModel: z.enum(GROQ_MODELS as [string, ...string[]]).optional(), model: z.enum(SUPPORTED_MODELS as [string, ...string[]]).optional(), effort: z.enum(["low", "medium", "high", "xhigh", "max"]).optional(), maxContextFiles: z.number().int().min(1).max(40).optional(), monthlyBudgetUsd: z.number().min(0).max(100000).optional(), allowCodeSnippetsToAI: z.boolean().optional() }).optional(),
     analysis: z.object({ defaultPreset: z.enum(["quick", "full", "security", "architecture"]).optional(), osv: z.boolean().optional() }).optional(),
     notifications: z.object({ analysisComplete: z.boolean().optional(), criticalFindings: z.boolean().optional(), workflowApprovals: z.boolean().optional(), email: z.boolean().optional() }).optional(),
     retention: z.object({ activityDays: z.number().int().min(30).max(3650).optional(), jobLogDays: z.number().int().min(7).max(3650).optional(), chatDays: z.number().int().min(1).max(3650).optional() }).optional(),
@@ -515,6 +515,11 @@ platformRouter.put("/integrations/:provider", requirePerm("integrations.manage")
     const r = await fetch(`${process.env.DEVFORGE_ANTHROPIC_BASE_URL ?? "https://api.anthropic.com"}/v1/models?limit=1`, { headers: { "x-api-key": b.secret, "anthropic-version": "2023-06-01" }, signal: AbortSignal.timeout(10_000) }).catch(() => null);
     if (!r) throw badRequest("Could not reach the Anthropic API to verify the key");
     if (r.status === 401 || r.status === 403) throw badRequest("Anthropic rejected this API key");
+  }
+  if (provider === "groq") {
+    const r = await fetch(`${process.env.DEVFORGE_GROQ_BASE_URL ?? "https://api.groq.com"}/openai/v1/models`, { headers: { Authorization: `Bearer ${b.secret}` }, signal: AbortSignal.timeout(10_000) }).catch(() => null);
+    if (!r) throw badRequest("Could not reach the Groq API to verify the key");
+    if (r.status === 401 || r.status === 403) throw badRequest("Groq rejected this API key");
   }
   setIntegration(req.workspaceId!, provider, b.secret, b.config, req.user!.id);
   audit({ workspaceId: req.workspaceId, actorId: req.user!.id, action: "integration.connected", entityType: "integration", entityId: provider });

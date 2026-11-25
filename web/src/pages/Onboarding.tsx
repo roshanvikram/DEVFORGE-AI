@@ -195,10 +195,10 @@ function AIStep({ busy, canManage, onNext, onBack }: { busy: boolean; canManage:
   return (
     <div>
       <h2 className="flex items-center gap-2 text-[22px] font-semibold tracking-[-0.02em] text-ink"><Sparkles className="size-5 text-amber-deep" /> AI preferences</h2>
-      <p className="mt-2 text-[14px] text-muted">Claude powers hypotheses, reviews, test generation, agents and Q&A. All static analysis works without it.</p>
-      <div className="mt-4">{st.data?.ai.configured ? <StatusBadge status="connected" /> : <Badge>Not configured</Badge>}</div>
+      <p className="mt-2 text-[14px] text-muted">An AI provider (Anthropic Claude or Groq) powers hypotheses, reviews, test generation, agents and Q&A. Connect one in Integrations; all static analysis works without it.</p>
+      <div className="mt-4 flex items-center gap-2">{st.data?.ai.configured ? <><StatusBadge status="connected" /><span className="text-[12.5px] text-muted">{st.data.ai.provider === "groq" ? "Groq" : "Claude"} · {st.data.ai.model}</span></> : <Badge>Not configured</Badge>}</div>
       <div className="mt-5 grid gap-4 md:grid-cols-2">
-        <Field label="Model"><Select className="w-full" value={model} onChange={(e) => setModel(e.target.value)} disabled={!canManage}>{(st.data?.models ?? ["claude-opus-5-5"]).map((m: string) => <option key={m}>{m}</option>)}</Select></Field>
+        <Field label="Claude model"><Select className="w-full" value={model} onChange={(e) => setModel(e.target.value)} disabled={!canManage}>{(st.data?.models ?? ["claude-opus-5-5"]).map((m: string) => <option key={m}>{m}</option>)}</Select></Field>
         <Field label="Reasoning effort"><Select className="w-full" value={effort} onChange={(e) => setEffort(e.target.value)} disabled={!canManage}>{["low", "medium", "high", "xhigh", "max"].map((m) => <option key={m}>{m}</option>)}</Select></Field>
       </div>
       {!st.data?.ai.configured && canManage && <div className="mt-4"><Field label="Anthropic API key (optional)" hint="Verified, then encrypted at rest. Never displayed again."><Input type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="sk-ant-…" autoComplete="off" /></Field></div>}

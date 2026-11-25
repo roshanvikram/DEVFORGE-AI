@@ -46,7 +46,8 @@ DevForge ingests **untrusted repositories**, stores **credentials** (AI keys, Gi
 - Only retrieved, budget-limited code excerpts are sent; workspace setting can forbid sending code.
 - Repository content is treated as data in prompts; agent tools are read-only (no writes to the repository, no patch application, no network tools).
 - AI output is labelled (`ai_hypothesis`), cited files are verified to exist, and fixes require human action.
-- Monthly budget and per-minute rate limit per workspace.
+- Monthly budget and per-minute rate limit per workspace (Groq spend counts toward the budget only when `GROQ_PRICES` is configured).
+- Supported providers: Anthropic Claude and Groq. The workspace's explicit choice is honoured; there is no silent fallback to another provider.
 
 ## Reporting
 

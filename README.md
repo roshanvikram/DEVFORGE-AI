@@ -18,7 +18,7 @@ Open http://localhost:5173, create an account, and follow onboarding to connect 
 
 ### Enable AI features
 
-Add a Claude API key either in **Integrations → Anthropic** (stored encrypted per workspace) or as `ANTHROPIC_API_KEY` in `server/.env`. Without a key, static analysis, scans, quality gates, sandboxed tests and deterministic agent playbooks still work; AI-only features say so explicitly instead of faking output.
+Connect an AI provider: **Anthropic Claude** (API key starting `sk-ant-api…`) or **Groq** (key starting `gsk_…`). Add it in **Integrations** (verified with the provider, stored encrypted per workspace) or as `ANTHROPIC_API_KEY` / `GROQ_API_KEY` in `server/.env`. Choose the provider and model in **Settings → AI & models** (Auto uses Claude when connected, otherwise Groq). Without a key, static analysis, scans, quality gates, sandboxed tests and deterministic agent playbooks still work; AI-only features say so explicitly instead of faking output.
 
 ### Production
 
@@ -30,8 +30,8 @@ NODE_ENV=production APP_SECRET=... node server/dist/index.js   # serves web/dist
 ## Tests
 
 ```bash
-npm test                                  # server (55) + web (13) suites
-npm run test:live --workspace server      # optional live Claude smoke test (needs ANTHROPIC_API_KEY)
+npm test                                  # server (62) + web (13) suites
+npm run test:live --workspace server      # optional live Claude / Groq smoke tests (need ANTHROPIC_API_KEY / GROQ_API_KEY)
 npm run typecheck
 ```
 

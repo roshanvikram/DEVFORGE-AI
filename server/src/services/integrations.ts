@@ -4,7 +4,8 @@ import { encryptSecret, decryptSecret, last4 } from "../lib/crypto.js";
 
 export const INTEGRATION_PROVIDERS = {
   github: { name: "GitHub", secretLabel: "Personal access token (repo, read:org)", description: "Import private repositories, list pull requests, post review comments." },
-  anthropic: { name: "Anthropic (Claude)", secretLabel: "API key", description: "Primary AI provider for agents, investigations, reviews, test generation and Q&A." },
+  anthropic: { name: "Anthropic (Claude)", secretLabel: "API key (starts with sk-ant-api…)", description: "AI provider for agents, investigations, reviews, test generation and Q&A." },
+  groq: { name: "Groq", secretLabel: "API key (starts with gsk_…)", description: "Fast open-model inference (Llama, GPT-OSS) as an alternative AI provider." },
   slack: { name: "Slack", secretLabel: "Incoming webhook URL", description: "Send workflow notifications to a Slack channel." },
   webhook: { name: "Generic webhook", secretLabel: "Webhook URL (https)", description: "POST workflow notifications as JSON to your endpoint." },
 } as const;
@@ -15,7 +16,7 @@ export function listIntegrations(workspaceId: string) {
   const byP = new Map(rows.map((r) => [r.provider, r]));
   return (Object.keys(INTEGRATION_PROVIDERS) as Provider[]).map((p) => {
     const r = byP.get(p);
-    const envConfigured = p === "anthropic" ? !!process.env.ANTHROPIC_API_KEY : p === "github" ? !!process.env.GITHUB_TOKEN : false;
+    const envConfigured = p === "anthropic" ? !!process.env.ANTHROPIC_API_KEY : p === "groq" ? !!process.env.GROQ_API_KEY : p === "github" ? !!process.env.GITHUB_TOKEN : false;
     return {
       provider: p,
       ...INTEGRATION_PROVIDERS[p],
@@ -66,7 +67,7 @@ export function getGithubToken(workspaceId: string): string | null {
 
 // ---------- workspace settings ----------
 export const DEFAULT_SETTINGS = {
-  ai: { model: "claude-opus-5-5", effort: "medium" as "low" | "medium" | "high" | "xhigh" | "max", maxContextFiles: 12, monthlyBudgetUsd: 50, allowCodeSnippetsToAI: true },
+  ai: { provider: "auto" as "auto" | "anthropic" | "groq", model: "claude-opus-5-5", groqModel: "llama-3.3-70b-versatile", effort: "medium" as "low" | "medium" | "high" | "xhigh" | "max", maxContextFiles: 12, monthlyBudgetUsd: 50, allowCodeSnippetsToAI: true },
   analysis: { defaultPreset: "quick", osv: true },
   notifications: { analysisComplete: true, criticalFindings: true, workflowApprovals: true, email: false },
   retention: { activityDays: 365, jobLogDays: 90, chatDays: 180 },

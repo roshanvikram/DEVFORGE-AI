@@ -189,6 +189,7 @@ export const SECRET_RULES: SecretRule[] = [
   { id: "secret/aws-access-key", title: "AWS access key ID", re: /\b(AKIA|ASIA)[0-9A-Z]{16}\b/, severity: "critical", confidence: "high" },
   { id: "secret/github-token", title: "GitHub token", re: /\b(gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{50,})\b/, severity: "critical", confidence: "high" },
   { id: "secret/anthropic-key", title: "Anthropic API key", re: /\bsk-ant-(api|admin)\d{2}-[A-Za-z0-9_-]{40,}/, severity: "critical", confidence: "high" },
+  { id: "secret/groq-key", title: "Groq API key", re: /\bgsk_[A-Za-z0-9]{40,}\b/, severity: "critical", confidence: "high" },
   { id: "secret/openai-key", title: "OpenAI-style API key", re: /\bsk-(proj-)?[A-Za-z0-9]{32,}\b/, severity: "critical", confidence: "medium" },
   { id: "secret/slack-token", title: "Slack token", re: /\bxox[baprs]-[A-Za-z0-9-]{10,}/, severity: "high", confidence: "high" },
   { id: "secret/stripe-live-key", title: "Stripe live secret key", re: /\b(sk|rk)_live_[A-Za-z0-9]{20,}/, severity: "critical", confidence: "high" },

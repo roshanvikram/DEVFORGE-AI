@@ -22,7 +22,7 @@
 | Engine | `engine/` | Ingestion (SSRF-guarded clone, safe git flags), indexer (files, symbols, edges, FTS), TS/JS AST + Python AST analyzers, pattern & secret rules, debt metrics, graph algorithms, dependency parsing + OSV, optional external tools |
 | Services | `services/` | Analysis pipeline, findings persistence/fingerprints, metrics, search/retrieval, investigations, reviews, Test Forge, integrations, realtime (health history, gates, auto-sync, webhooks) |
 | Jobs | `jobs/queue.ts` | SQLite-persisted queue, concurrency `JOB_CONCURRENCY`, progress (throttled), logs, cancel/retry, restart recovery, `runInline` for workflows |
-| AI | `ai/provider.ts` | Claude via `@anthropic-ai/sdk` streaming; structured outputs; usage & cost accounting; per-workspace rate limit and monthly budget; error mapping |
+| AI | `ai/provider.ts` | Provider interface with Claude (`@anthropic-ai/sdk`, streaming) and Groq (OpenAI-compatible chat completions; tools and JSON mode translated) — chosen per workspace (auto / anthropic / groq); structured outputs; usage & cost accounting; per-workspace rate limit and monthly budget; error mapping |
 | Agents | `agents/` | Definitions, tool registry, runner (AI tool loop or deterministic playbook) |
 | Workflows | `workflows/engine.ts` | DAG validation, node execution, conditions, approvals (pause/resume), retries |
 | Sandbox | `sandbox/runner.ts` | Mode detection, workdir copy without `.git`, Docker or `sandbox-exec` profile |

@@ -1,6 +1,7 @@
 /** Structured logger that redacts secret-looking values before they reach stdout. */
 const SECRET_PATTERNS = [
   /sk-ant-[A-Za-z0-9_-]{8,}/g,
+  /gsk_[A-Za-z0-9]{20,}/g,
   /gh[pousr]_[A-Za-z0-9]{20,}/g,
   /github_pat_[A-Za-z0-9_]{20,}/g,
   /AKIA[0-9A-Z]{16}/g,

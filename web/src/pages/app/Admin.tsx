@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Users, Plug, Settings as SettingsIcon, HelpCircle, Mail, Trash2, Plus, Sparkles, Webhook, Shield, KeyRound, Monitor, CheckCircle2, XCircle, Terminal, BookOpen } from "lucide-react";
+import { Users, Plug, Settings as SettingsIcon, HelpCircle, Mail, Trash2, Plus, Sparkles, Webhook, Shield, KeyRound, Monitor, CheckCircle2, XCircle, Terminal, BookOpen, Zap } from "lucide-react";
 import { Github, Slack } from "../../components/icons";
 import { get, post, patch, put, del, setWorkspaceId } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
@@ -65,7 +65,7 @@ export function TeamPage() {
   );
 }
 
-const INT_ICON: Record<string, any> = { github: Github, anthropic: Sparkles, slack: Slack, webhook: Webhook };
+const INT_ICON: Record<string, any> = { github: Github, anthropic: Sparkles, groq: Zap, slack: Slack, webhook: Webhook };
 export function IntegrationsPage() {
   const { can } = useAuth();
   const qc = useQueryClient();
@@ -199,7 +199,7 @@ function WsSettings({ tab }: { tab: "ai" | "notifications" | "retention" | "usag
       <>
         <div className="mb-4 grid gap-3 md:grid-cols-4"><Stat label="AI spend this month" value={usd(ai.monthSpendUsd)} sub={`budget ${ai.budgetUsd ? usd(ai.budgetUsd) : "unlimited"}`} /><Stat label="AI requests" value={num(ai.monthRequests)} /><Stat label="Input tokens" value={num(ai.monthInputTokens)} /><Stat label="Output tokens" value={num(ai.monthOutputTokens)} /></div>
         <Panel title="Billing">
-          <p className="text-[13px] leading-relaxed text-muted">AI usage is billed by Anthropic directly to the API key you connect; DevForge records provider-reported token usage and estimates cost from published per-model prices. Self-hosted DevForge has no platform fee.</p>
+          <p className="text-[13px] leading-relaxed text-muted">AI usage is billed by your provider (Anthropic or Groq) directly to the API key you connect; DevForge records provider-reported token usage and estimates cost from published per-model prices. Self-hosted DevForge has no platform fee.</p>
           {an.data?.ai?.length > 0 && <div className="mt-4"><Table head={["Feature (30d)", "Requests", "Cost"]}>{an.data.ai.map((r: any) => <tr key={r.feature}><td className="px-4 py-2 font-mono text-[12px]">{r.feature}</td><td className="px-4 py-2">{r.n}</td><td className="px-4 py-2">{usd(r.cost)}</td></tr>)}</Table></div>}
         </Panel>
       </>
@@ -210,21 +210,24 @@ function WsSettings({ tab }: { tab: "ai" | "notifications" | "retention" | "usag
       {!editable && <div className="mb-3"><Notice tone="info">Only owners and admins can change workspace settings.</Notice></div>}
       {tab === "ai" && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-[13px]">Provider: <b>Anthropic Claude</b> <StatusBadge status={q.data.ai.configured ? "connected" : "disconnected"} />{q.data.ai.source && <span className="text-muted">via {q.data.ai.source}</span>}</div>
+          <div className="flex flex-wrap items-center gap-2 text-[13px]">Active provider: <b>{q.data.ai.provider === "groq" ? "Groq" : q.data.ai.provider === "anthropic" ? "Anthropic Claude" : "none"}</b> <StatusBadge status={q.data.ai.configured ? "connected" : "disconnected"} />{q.data.ai.source && <span className="text-muted">via {q.data.ai.source}</span>}<span className="text-muted">· keys: Claude {q.data.ai.available.anthropic ? "✓" : "—"}, Groq {q.data.ai.available.groq ? "✓" : "—"}</span></div>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Model"><Select className="w-full" disabled={!editable} value={s.ai.model} onChange={(e) => upd("ai", "model", e.target.value)}>{q.data.models.map((m: string) => <option key={m}>{m}</option>)}</Select></Field>
-            <Field label="Reasoning effort" hint="Higher effort: deeper analysis, more tokens."><Select className="w-full" disabled={!editable} value={s.ai.effort} onChange={(e) => upd("ai", "effort", e.target.value)}>{["low", "medium", "high", "xhigh", "max"].map((m) => <option key={m}>{m}</option>)}</Select></Field>
+            <Field label="Provider" hint="Auto uses Claude when connected, otherwise Groq."><Select className="w-full" disabled={!editable} value={s.ai.provider ?? "auto"} onChange={(e) => upd("ai", "provider", e.target.value)}><option value="auto">Auto</option><option value="anthropic">Anthropic Claude</option><option value="groq">Groq</option></Select></Field>
+            <Field label="Claude model"><Select className="w-full" disabled={!editable} value={s.ai.model} onChange={(e) => upd("ai", "model", e.target.value)}>{q.data.models.map((m: string) => <option key={m}>{m}</option>)}</Select></Field>
+            <Field label="Groq model"><Select className="w-full" disabled={!editable} value={s.ai.groqModel ?? q.data.groqModels?.[0]} onChange={(e) => upd("ai", "groqModel", e.target.value)}>{(q.data.groqModels ?? []).map((m: string) => <option key={m}>{m}</option>)}</Select></Field>
+            <Field label="Reasoning effort (Claude)" hint="Higher effort: deeper analysis, more tokens."><Select className="w-full" disabled={!editable} value={s.ai.effort} onChange={(e) => upd("ai", "effort", e.target.value)}>{["low", "medium", "high", "xhigh", "max"].map((m) => <option key={m}>{m}</option>)}</Select></Field>
             <Field label="Monthly budget (USD)" hint="Requests are refused once reached. 0 = unlimited."><Input type="number" min={0} disabled={!editable} value={s.ai.monthlyBudgetUsd} onChange={(e) => upd("ai", "monthlyBudgetUsd", Number(e.target.value))} /></Field>
             <Field label="Max context files per request"><Input type="number" min={1} max={40} disabled={!editable} value={s.ai.maxContextFiles} onChange={(e) => upd("ai", "maxContextFiles", Number(e.target.value))} /></Field>
           </div>
+          {q.data.ai.provider === "groq" && !q.data.ai.costTracked && <Notice tone="info">Groq token usage is recorded, but cost is shown as $0 unless the server sets GROQ_PRICES, so the monthly budget does not limit Groq spend.</Notice>}
           <Toggle disabled={!editable} checked={s.ai.allowCodeSnippetsToAI} onChange={(v) => upd("ai", "allowCodeSnippetsToAI", v)} label="Allow relevant code snippets to be sent to the AI provider" />
-          {editable && <Button variant="primary" onClick={() => save("ai")}>Save</Button>}
+          {editable && <div className="pt-1"><Button variant="primary" onClick={() => save("ai")}>Save</Button></div>}
         </div>
       )}
       {tab === "notifications" && (
         <div className="space-y-3">
           {[["analysisComplete", "Analysis completed"], ["criticalFindings", "Critical findings detected"], ["workflowApprovals", "Workflow approvals requested"], ["email", "Also send email (requires SMTP)"]].map(([k, l]) => <div key={k}><Toggle disabled={!editable} checked={s.notifications[k]} onChange={(v) => upd("notifications", k, v)} label={l} /></div>)}
-          {editable && <Button variant="primary" onClick={() => save("notifications")}>Save</Button>}
+          {editable && <div className="pt-1"><Button variant="primary" onClick={() => save("notifications")}>Save</Button></div>}
         </div>
       )}
       {tab === "retention" && (
@@ -232,7 +235,7 @@ function WsSettings({ tab }: { tab: "ai" | "notifications" | "retention" | "usag
           <Field label="Activity log retention (days)"><Input type="number" disabled={!editable} value={s.retention.activityDays} onChange={(e) => upd("retention", "activityDays", Number(e.target.value))} /></Field>
           <Field label="Job log retention (days)"><Input type="number" disabled={!editable} value={s.retention.jobLogDays} onChange={(e) => upd("retention", "jobLogDays", Number(e.target.value))} /></Field>
           <Field label="Repository chat retention (days)"><Input type="number" disabled={!editable} value={s.retention.chatDays} onChange={(e) => upd("retention", "chatDays", Number(e.target.value))} /></Field>
-          {editable && <Button variant="primary" onClick={() => save("retention")}>Save</Button>}
+          {editable && <div className="pt-1"><Button variant="primary" onClick={() => save("retention")}>Save</Button></div>}
         </div>
       )}
     </Panel>

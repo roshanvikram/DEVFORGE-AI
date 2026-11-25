@@ -182,7 +182,7 @@ export function AgentRunPage() {
       <PageHeader eyebrow={`Agent run · ${r.repository ?? ""}`} title={titleCase(r.agent_key)} description={r.task}
         actions={<>{ACTIVE.includes(r.status) && can("agents.run") && <Button icon={<X className="size-4" />} onClick={async () => { try { await post(`/agent-runs/${r.id}/cancel`); toast("Cancelling…"); } catch (e: any) { toast.error(e.message); } }}>Cancel</Button>}<StatusBadge status={r.status} /></>} />
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-5">
-        {[["Steps", r.steps], ["Mode", r.ai_used ? "AI (Claude)" : "Deterministic playbook"], ["Tokens", r.ai_used ? num(r.input_tokens + r.output_tokens) : "—"], ["Cost", r.ai_used ? usd(r.cost_usd) : "—"], ["Duration", durationBetween(r.started_at, r.finished_at ?? (ACTIVE.includes(r.status) ? new Date().toISOString() : null))]].map(([k, v]) => <div key={k as string} className="panel p-3"><div className="text-[11.5px] text-muted">{k}</div><div className="mt-1 text-[15px] font-semibold text-ink">{v}</div></div>)}
+        {[["Steps", r.steps], ["Mode", r.ai_used ? "AI tool loop" : "Deterministic playbook"], ["Tokens", r.ai_used ? num(r.input_tokens + r.output_tokens) : "—"], ["Cost", r.ai_used ? usd(r.cost_usd) : "—"], ["Duration", durationBetween(r.started_at, r.finished_at ?? (ACTIVE.includes(r.status) ? new Date().toISOString() : null))]].map(([k, v]) => <div key={k as string} className="panel p-3"><div className="text-[11.5px] text-muted">{k}</div><div className="mt-1 text-[15px] font-semibold text-ink">{v}</div></div>)}
       </div>
       {r.error && <div className="mb-4"><Notice tone="danger">{r.error}</Notice></div>}
       <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">

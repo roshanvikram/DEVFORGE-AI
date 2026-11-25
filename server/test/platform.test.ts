@@ -322,7 +322,7 @@ describe("secrets", () => {
   it("never returns saved API keys from the integrations API", async () => {
     const r = await owner.agent.get("/api/integrations");
     expect(r.status).toBe(200);
-    expect(JSON.stringify(r.body)).not.toMatch(/sk-ant-/);
+    expect(JSON.stringify(r.body)).not.toMatch(/sk-ant-[A-Za-z0-9_-]{20,}|gsk_[A-Za-z0-9]{20,}/);
   });
 });
 

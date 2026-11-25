@@ -80,7 +80,7 @@ def analyze(path, src, is_test):
                 spec = "." * (child.level or 0) + (child.module or "")
                 names = [a.asname or a.name for a in child.names if a.name != "*"]
                 imports.append({"spec": spec, "names": names, "line": child.lineno})
-                if not path.endswith("__init__.py"):
+                if not path.endswith("__init__.py") and child.module != "__future__":
                     for nm in names:
                         imported[nm] = child.lineno
 

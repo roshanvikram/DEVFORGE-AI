@@ -8,7 +8,7 @@ import type { RawFinding, Severity } from "./types.js";
  * None of these tools execute repository code: they read files (and for npm audit, the lockfile).
  * The result always reports what actually happened: ok / not_installed / failed / skipped.
  */
-export type ToolStatus = { status: "ok" | "not_installed" | "failed" | "skipped"; note: string; findings: number };
+export type ToolStatus = { status: "ok" | "partial" | "not_installed" | "failed" | "skipped"; note: string; findings: number };
 
 const SAFE_ENV = () => ({ PATH: process.env.PATH ?? "/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin", HOME: process.env.HOME ?? "/tmp", LANG: "C.UTF-8" });
 

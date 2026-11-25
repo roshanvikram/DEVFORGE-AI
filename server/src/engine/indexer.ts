@@ -277,9 +277,13 @@ export async function indexRepository(repoId: string, root: string, meta: { sha:
   }
 
   d.transaction(() => {
+    // Insert every file first so import/call edges can reference any target file.
     for (const f of files) {
       const r = parse.get(f.path);
       insFile.run(f.id, snapshotId, f.path, f.language, f.size, f.loc, crypto.createHash("sha1").update(f.content).digest("hex"), r?.complexity ?? 0, r?.maxFunctionLines ?? 0, f.isTest ? 1 : 0, r?.parsed ? 1 : 0);
+    }
+    for (const f of files) {
+      const r = parse.get(f.path);
       if (f.language && f.language !== "json" || f.path.endsWith("package.json")) insFts.run(f.path, f.content.slice(0, 200_000), f.id, snapshotId);
       for (const s of r?.symbols ?? []) insSym.run(newId("sym_"), snapshotId, f.id, s.name.slice(0, 300), s.kind, s.parent ?? null, s.line, s.end_line, s.signature ?? null, s.exported ? 1 : 0, s.complexity, JSON.stringify(s.meta ?? {}));
       for (const m of schemaModels(f)) insSym.run(newId("sym_"), snapshotId, f.id, m.name, "model", null, m.line, m.line, null, 1, 1, JSON.stringify({ orm: m.orm }));

@@ -1,6 +1,5 @@
 import type { Server } from "node:http";
 import { WebSocketServer, WebSocket } from "ws";
-import { parse as parseCookie } from "node:querystring";
 import { resolveSession } from "../auth/session.js";
 import { db } from "../db/db.js";
 
@@ -56,5 +55,4 @@ export function attachEvents(server: Server) {
     for (const c of clients) if (c.ws.readyState === WebSocket.OPEN) c.ws.ping();
   }, 25_000);
   ping.unref();
-  void parseCookie;
 }

@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import fs from "node:fs";
-import { startStub, GOOD_KEY, BAD_KEY } from "./stub-anthropic.js";
+import { startStub, GOOD_KEY, BAD_KEY, NO_CREDIT_KEY } from "./stub-anthropic.js";
 import { H, makeFixture, signup, waitJob, FIXTURE_ROOT } from "./helpers.js";
 
 let stub: Awaited<ReturnType<typeof startStub>>;
@@ -131,6 +131,15 @@ describe("AI features through the real provider code", () => {
     const failed = db().prepare(`SELECT error FROM ai_usage WHERE workspace_id = ? AND ok = 0`).all(u.workspaceId);
     expect(failed.length).toBeGreaterThan(0);
     expect(JSON.stringify(failed)).not.toContain(BAD_KEY);
+  });
+
+  it("explains an account with no API credit instead of a generic failure", async () => {
+    process.env.ANTHROPIC_API_KEY = NO_CREDIT_KEY;
+    const r = await u.agent.post(`/api/repositories/${repoId}/chat`).set(H).send({ question: "What does find do?" });
+    delete process.env.ANTHROPIC_API_KEY;
+    expect(r.status).toBe(402);
+    expect(r.body.error.code).toBe("ai_billing");
+    expect(r.body.error.message).toMatch(/credit/i);
   });
 
   it("enforces the monthly AI budget before calling the provider", async () => {

@@ -112,6 +112,9 @@ class ClaudeProvider implements AIProvider {
       const message = redact(String(e?.message ?? e)).slice(0, 300);
       this.record(req.feature, this.model, 0, 0, 0, false, message, Date.now() - started);
       if (e instanceof Anthropic.AuthenticationError) throw new HttpError(502, "The configured Anthropic API key was rejected. Update it in Settings → AI Providers.", "ai_auth");
+      // The key is valid but the Anthropic account has no usable credit.
+      if (status === 400 && /credit balance is too low/i.test(String(e?.message))) throw new HttpError(402, "Your Anthropic account has no remaining API credit. Add credits in the Claude Console (Plans & Billing), then retry.", "ai_billing");
+      if (e instanceof Anthropic.PermissionDeniedError) throw new HttpError(502, "The Anthropic API key does not have permission for this request (check the key's workspace and model access).", "ai_permission");
       if (e instanceof Anthropic.RateLimitError) throw new HttpError(429, "The AI provider is rate-limiting requests. Try again shortly.", "ai_rate_limited");
       if (e instanceof Anthropic.APIConnectionTimeoutError) throw new HttpError(504, "The AI request timed out.", "ai_timeout");
       if (e instanceof Anthropic.APIConnectionError) throw new HttpError(502, "Could not reach the AI provider.", "ai_unreachable");

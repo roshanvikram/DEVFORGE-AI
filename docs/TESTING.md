@@ -7,7 +7,7 @@ npm test                                  # server + web
 npm run test:live --workspace server      # optional: real Claude API (needs ANTHROPIC_API_KEY)
 ```
 
-**Latest run: server 54 / 54 passed, web 13 / 13 passed.** Both packages also pass `npm run typecheck`, and both build for production.
+**Latest run: server 55 / 55 passed, web 13 / 13 passed.** Both packages also pass `npm run typecheck`, and both build for production.
 
 ### Server — `server/test/`
 
@@ -24,8 +24,8 @@ Secret-like values in the fixtures are built at runtime, so the source never con
 | --- | --- | --- |
 | `platform.test.ts` | 39 | Auth (CSRF, origin, password policy, login success and failure, hashed sessions); tenancy (forged `X-Workspace-Id` rejected) and RBAC; SSRF guards and local-import roots; real detection of SQL injection, eval, unsafe deserialization and secrets (masked); a clean repo has no security findings; search, path traversal, architecture graph; findings triage; health history; quality gates (fail, pass, notify, validation); auto-sync refusal for local repos; HMAC webhooks (signed, forged, ignored branch, encrypted secret, 404); presence over WebSocket; unauthenticated sockets rejected; Live Ops metrics; AES-GCM and log redaction; dashboard counts match the database |
 | `sandbox.test.ts` | 7 | macOS `sandbox-exec` mode. The repo's own tests run and parse (pass and fail counted). Network is blocked, writes outside the workdir are blocked, reads of DevForge's data directory are blocked, and server env vars do not leak. A full `npm test` suite runs through the API and records 2 passed / 1 failed |
-| `ai.test.ts` | 8 | DevForge's real provider code (Anthropic SDK, streaming, tool loop, structured output) runs against a local Messages-API stand-in. Covers: the no-key fallback, a rejected key not stored, a valid key stored encrypted and never echoed, Q&A with bounded context, citations and usage/cost accounting, and an agent tool loop calling a real tool and reporting its real output, with only that agent's tools sent. Also: AI hypotheses labelled, an invented file flagged, the patch never applied, a revoked key mapped to `ai_auth` without leaking, and the monthly budget enforced before any provider call |
-| `live-claude.test.ts` | 1 (skipped without a key) | A structured-output request against the real Claude API through DevForge's provider |
+| `ai.test.ts` | 9 | DevForge's real provider code (Anthropic SDK, streaming, tool loop, structured output) runs against a local Messages-API stand-in. Covers: the no-key fallback, a rejected key not stored, a valid key stored encrypted and never echoed, Q&A with bounded context, citations and usage/cost accounting, and an agent tool loop calling a real tool and reporting its real output, with only that agent's tools sent. Also: AI hypotheses labelled, an invented file flagged, the patch never applied, a revoked key mapped to `ai_auth` without leaking, an account with no credit mapped to `ai_billing`, and the monthly budget enforced before any provider call |
+| `live-claude.test.ts` | 1 (skipped without a key) | A structured-output request against the real Claude API through DevForge's provider. Last run (2026-11-25): the key was accepted and the request reached the API, which refused it for insufficient account credit; it has not yet passed end to end |
 
 ### Web — `web/src/__tests__/`
 

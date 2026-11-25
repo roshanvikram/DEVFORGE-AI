@@ -10,6 +10,7 @@ type Block = { type: "text"; text: string } | { type: "tool_use"; id: string; na
 
 export const GOOD_KEY = "test-key-valid-0001";
 export const BAD_KEY = "test-key-revoked-0002";
+export const NO_CREDIT_KEY = "test-key-nocredit-0003";
 
 function sse(res: http.ServerResponse, blocks: Block[], stop: string) {
   res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache" });
@@ -40,7 +41,11 @@ export function startStub(): Promise<{ url: string; requests: Recorded[]; close:
       requests.push({ path: req.url ?? "", headers: req.headers, body });
       // Current SDKs send the key as a Bearer token; direct fetches use x-api-key. Accept both.
       const key = req.headers["x-api-key"] ?? String(req.headers.authorization ?? "").replace(/^Bearer /, "");
-      if (key !== GOOD_KEY) {
+      if (key === NO_CREDIT_KEY && req.url?.startsWith("/v1/messages")) {
+        res.writeHead(400, { "content-type": "application/json" });
+        return res.end(JSON.stringify({ type: "error", error: { type: "invalid_request_error", message: "Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits." } }));
+      }
+      if (key !== GOOD_KEY && key !== NO_CREDIT_KEY) {
         res.writeHead(401, { "content-type": "application/json" });
         return res.end(JSON.stringify({ type: "error", error: { type: "authentication_error", message: "invalid x-api-key" } }));
       }
